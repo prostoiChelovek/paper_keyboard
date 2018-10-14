@@ -2,7 +2,7 @@
 #include <iostream>
 #include <ctime>
 
-#include "handDetector.hpp"
+#include "handDetector/handDetector.hpp"
 
 #include <SerialStream.h>
 #include <SerialPort.h>
@@ -16,16 +16,16 @@ using namespace std;
 using namespace cv;
 using namespace LibSerial;
 
-class Key
+class PKBKey
 {
  public:
 	Point x1 = Point(-1, -1);
 	Point x2, y1, y2;
 	string text;
 
-	Key() {}
+	PKBKey() {}
 
-	Key(Point x1_, Point x2_, Point y1_, Point y2_, string text_)
+	PKBKey(Point x1_, Point x2_, Point y1_, Point y2_, string text_)
 	{
 		x1 = x1_;
 		x2 = x2_;
@@ -56,10 +56,10 @@ class PaperKeyboard
 	Scalar YCrCb_lower = Scalar(0, 135, 90);
 	Scalar YCrCb_upper = Scalar(200, 209, 150);
 
-	vector<Key> keys;
+	vector<PKBKey> keys;
 	Finger lastHigherFinger;
 	string printedText = "";
-	function<void(const Point &, const Key &)> onClickCallback;
+	function<void(const Point &, const PKBKey &)> onClickCallback;
 
 	time_t lastClickTime = time(0);
 
@@ -164,7 +164,7 @@ class PaperKeyboard
 
 	void addKey(Point x1, Point x2, Point y1, Point y2, string text)
 	{
-		keys.push_back(Key(x1, x2, y1, y2, text));
+		keys.push_back(PKBKey(x1, x2, y1, y2, text));
 	}
 
 	void addKeysByVec(Point x1, vector<string> strs, int height = 50,
@@ -209,15 +209,15 @@ class PaperKeyboard
 		}
 	}
 
-	Key getKeyByPoint(Point p)
+	PKBKey getKeyByPoint(Point p)
 	{
-		for (Key k : keys)
+		for (PKBKey k : keys)
 		{
 			if (k.x1.x < p.x && k.x2.x > p.x &&
 				 k.x1.y < p.y && k.y1.y > p.y)
 				return k;
 		}
-		return Key();
+		return PKBKey();
 	}
 
 	// TODO: make correct click detection
@@ -231,7 +231,7 @@ class PaperKeyboard
 				int diffDist = (cf.ptFar.y - cf.ptStart.y) - (lastHigherFinger.ptFar.y - lastHigherFinger.ptStart.y);
 				if (diffDist > 5 && diffDist < 40)
 				{
-					Key k = getKeyByPoint(Point(cf.ptStart.x + 10, cf.ptStart.y));
+					PKBKey k = getKeyByPoint(Point(cf.ptStart.x + 10, cf.ptStart.y));
 					if (k.x1.x != -1)
 					{
 						if (time(0) - lastClickTime >= 1){
@@ -244,7 +244,7 @@ class PaperKeyboard
 		}
 	}
 
-	void onClick(const Point &p, const Key &k)
+	void onClick(const Point &p, const PKBKey &k)
 	{
 		cout << "click " << k.text << endl;
 
@@ -271,7 +271,7 @@ class PaperKeyboard
 
 	void drawKeys(Mat &img, Scalar color = Scalar(255, 0, 0))
 	{
-		for (Key &k : keys)
+		for (PKBKey &k : keys)
 			k.draw(img, color);
 	}
 	void drawText(Mat &img, Scalar color = Scalar(0, 255, 0), Point pos = Point(200, 200))
@@ -323,14 +323,14 @@ void flipImg(Mat img, Mat &res)
 	flip(img, res, 1);
 }
 
-void onClick(const Point &p, const Key &k)
+void onClick(const Point &p, const PKBKey &k)
 {
 	writeSerial(k.text);
 }
 
 int main(int argc, char **argv)
 {
-	VideoCapture cap(0);
+	VideoCapture cap(1);
 	if (!cap.isOpened())
 	{
 		cerr << "Unable to open video capture" << endl;
