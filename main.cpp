@@ -3,6 +3,7 @@
 #include <ctime>
 
 #include "handDetector/handDetector.hpp"
+#include "pkbkey.hpp"
 
 #include <SerialStream.h>
 #include <SerialPort.h>
@@ -10,42 +11,11 @@
 #define Q_KEY 1048689
 #define B_KEY 1048674
 
-#define fontSize Size(10, 10)
-
 using namespace std;
 using namespace cv;
 using namespace LibSerial;
 
-class PKBKey
-{
- public:
-	Point x1 = Point(-1, -1);
-	Point x2, y1, y2;
-	string text;
-
-	PKBKey() {}
-
-	PKBKey(Point x1_, Point x2_, Point y1_, Point y2_, string text_)
-	{
-		x1 = x1_;
-		x2 = x2_;
-		y1 = y1_;
-		y2 = y2_;
-		text = text_;
-	}
-
-	void draw(Mat &img, Scalar color = Scalar(255, 0, 0))
-	{
-		line(img, x1, x2, color);
-		line(img, y1, y2, color);
-		line(img, x1, y1, color);
-		line(img, x2, y2, color);
-		putText(img, text,
-				  Point((x1.x + x2.x) / 2 - fontSize.width * (text.size()),
-						  (x1.y + y1.y) / 2 + fontSize.height),
-				  FONT_HERSHEY_COMPLEX, 1, color);
-	}
-};
+Size fontSize(10, 10);
 
 class PaperKeyboard
 {
@@ -272,7 +242,7 @@ class PaperKeyboard
 	void drawKeys(Mat &img, Scalar color = Scalar(255, 0, 0))
 	{
 		for (PKBKey &k : keys)
-			k.draw(img, color);
+			k.draw(img, color, fontSize);
 	}
 	void drawText(Mat &img, Scalar color = Scalar(0, 255, 0), Point pos = Point(200, 200))
 	{
