@@ -21,8 +21,10 @@ class PaperKeyboard
 	vector<PKBKey> keys;
 	Finger lastHigherFinger;
 	string printedText = "";
-	function<void(const Point &, const PKBKey &)> onClickCallback;
 	Size fontSize = Size(10, 10);
+
+	function<void(const Point &, const PKBKey &)> onClick;
+	bool onClickSet = false;
 
 	time_t lastClickTime = time(0);
 
@@ -177,6 +179,19 @@ class PaperKeyboard
 		return PKBKey();
 	}
 
+	void setOnclick(function<void (const Point &, const PKBKey &)> f)
+	{
+		onClickSet = true;
+		onClick = f;
+	}
+
+	void callOnclick(const Point &p, const PKBKey &k)
+	{
+		if(!onClickSet)
+			return;
+		onClick(p, k);
+	}
+
 	// TODO: make correct click detection
 	void getClicks()
 	{
@@ -193,32 +208,13 @@ class PaperKeyboard
 					{
 						if (time(0) - lastClickTime >= 1)
 						{
-							onClick(cf.ptStart, k);
+							callOnclick(cf.ptStart, k);
 							lastClickTime = time(0);
 						}
 					}
 				}
 			}
 		}
-	}
-
-	void onClick(const Point &p, const PKBKey &k)
-	{
-		//cout << "click " << k.text << endl;
-
-		if (k.text == "space")
-		{
-			printedText += " ";
-		}
-		else if (k.text == "bkspace")
-		{
-			printedText = printedText.substr(0, printedText.size() - 1);
-		}
-		else
-		{
-			printedText += k.text;
-		}
-		onClickCallback(p, k);
 	}
 
 	void checkPrintedText()

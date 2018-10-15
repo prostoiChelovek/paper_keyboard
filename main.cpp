@@ -52,6 +52,7 @@ void flipImg(Mat img, Mat &res)
 
 void onClick(const Point &p, const PKBKey &k)
 {
+	cout << k.text << endl;
 	writeSerial(k.text);
 }
 
@@ -91,8 +92,7 @@ int main(int argc, char **argv)
 	pk.keysVec = vector<string>{
 		 "1", "2", "3", "4", "5", "6", "R", "G", "B"};
 
-	pk.onClickCallback = onClick;
-
+	pk.setOnclick(onClick);
 	//pk.addKeysByVec(Point(10, 10), Size(50, 50));
 
 	Mat frame, img, mask, img2;
