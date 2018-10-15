@@ -22,23 +22,12 @@ class PaperKeyboard
 	Finger lastHigherFinger;
 	string printedText = "";
 	function<void(const Point &, const PKBKey &)> onClickCallback;
-   Size fontSize = Size(10, 10);
+	Size fontSize = Size(10, 10);
 
 	time_t lastClickTime = time(0);
 
-	/*vector<string> keyboardKeysVec{
-		 "q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "\n",
-		 "a", "s", "d", "f", "g", "h", "j", "k", "l", "\n",
-		 "z", "x", "c", "v", "b", "n", "m", "\n",
-		 "space", "bkspace"};*/
-	vector<string> keyboardKeysVec{
-		 "1", "2", "3", "4", "5", "6", "R", "G", "B"};
-	/*vector<string> keyboardKeysVec{
-		 "1", "2", "3", "4", "5", "6", "7", "8", "9", "0",
-		 "й", "ц", "у", "к", "е", "н", "г", "ш", "щ", "з", "х", "ъ", 
-		 "ф", "ы", "в", "а", "п", "р", "о", "л", "д", "ж", "э",
-		 "я", "ч", "с", "м", "и", "т", "ь", "б", "ю",  
-	};*/
+	vector<string> keysVec;
+
 	PaperKeyboard()
 	{
 		hd = HandDetector();
@@ -95,6 +84,9 @@ class PaperKeyboard
 
 	void adjustKeyboard(Mat &img)
 	{
+		if (keys.size() == keysVec.size())
+			return;
+
 		String wName = "adjust keyboard";
 		namedWindow(wName);
 
@@ -111,18 +103,21 @@ class PaperKeyboard
 		if (tmpPoints.size() == 4)
 		{
 			addKey(tmpPoints[0], tmpPoints[1], tmpPoints[2], tmpPoints[3],
-					 keyboardKeysVec[keys.size()]);
+					 keysVec[keys.size()]);
 			tmpPoints.clear();
 		}
 
-		putText(img, keyboardKeysVec[keys.size()], Point(10,100), 
-					FONT_HERSHEY_DUPLEX, 1, Scalar(0,143,143), 2);
+		putText(img, keys.size() != keysVec.size() ? keysVec[keys.size()] : "end", Point(10, 100),
+				  FONT_HERSHEY_DUPLEX, 1, Scalar(0, 143, 143), 2);
 
 		for (Point p : tmpPoints)
 		{
 			circle(img, p, 3, Scalar(0, 0, 0));
 		}
 		imshow(wName, img);
+
+		if (keys.size() == keysVec.size())
+			destroyWindow(wName);
 	}
 
 	void addKey(Point x1, Point x2, Point y1, Point y2, string text)
@@ -130,13 +125,12 @@ class PaperKeyboard
 		keys.push_back(PKBKey(x1, x2, y1, y2, text));
 	}
 
-	void addKeysByVec(Point x1, vector<string> strs, int height = 50,
-							int width = 50)
+	void addKeysByVec(Point x1, Size ksize = Size(50, 50))
 	{
 		int i = 1;
 		int r = 1;
 		int lX = x1.x;
-		for (string &s : strs)
+		for (string &s : keysVec)
 		{
 			auto fN = s.find("\n");
 			if (fN != -1)
@@ -148,10 +142,10 @@ class PaperKeyboard
 				continue;
 			}
 			int aW = s.size() > 1 ? fontSize.width * (s.size() + 1) : 0;
-			Point X1(lX, x1.y + width * r);
-			Point X2(X1.x + width + aW, X1.y);
-			addKey(X1, X2, Point(X1.x, X1.y + height),
-					 Point(X2.x, X1.y + height), s);
+			Point X1(lX, x1.y + ksize.width * r);
+			Point X2(X1.x + ksize.width + aW, X1.y);
+			addKey(X1, X2, Point(X1.x, X1.y + ksize.height),
+					 Point(X2.x, X1.y + ksize.height), s);
 			i++;
 			lX = X2.x;
 		}
@@ -197,7 +191,8 @@ class PaperKeyboard
 					PKBKey k = getKeyByPoint(Point(cf.ptStart.x + 10, cf.ptStart.y));
 					if (k.x1.x != -1)
 					{
-						if (time(0) - lastClickTime >= 1){
+						if (time(0) - lastClickTime >= 1)
+						{
 							onClick(cf.ptStart, k);
 							lastClickTime = time(0);
 						}
@@ -228,7 +223,7 @@ class PaperKeyboard
 
 	void checkPrintedText()
 	{
-		if(printedText.size() >= 10)
+		if (printedText.size() >= 10)
 			printedText = "";
 	}
 

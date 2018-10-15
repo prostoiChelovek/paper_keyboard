@@ -76,10 +76,24 @@ int main(int argc, char **argv)
 
 	PaperKeyboard pk;
 
+	/*pk.keysVec = vector<string>{
+		 "q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "\n",
+		 "a", "s", "d", "f", "g", "h", "j", "k", "l", "\n",
+		 "z", "x", "c", "v", "b", "n", "m", "\n",
+		 "space", "bkspace"};
+	pk.keysVec = vector<string>{
+		 "1", "2", "3", "4", "5", "6", "7", "8", "9", "0",
+		 "й", "ц", "у", "к", "е", "н", "г", "ш", "щ", "з", "х", "ъ", 
+		 "ф", "ы", "в", "а", "п", "р", "о", "л", "д", "ж", "э",
+		 "я", "ч", "с", "м", "и", "т", "ь", "б", "ю",  
+	};*/
+
+	pk.keysVec = vector<string>{
+		 "1", "2", "3", "4", "5", "6", "R", "G", "B"};
+
 	pk.onClickCallback = onClick;
 
-	//pk.addKey(Point(5, 5), Point(65, 5), Point(7, 60), Point(55, 55), "a");
-	//pk.addKeysByVec(Point(10, 10), keys, 50, 50);
+	//pk.addKeysByVec(Point(10, 10), Size(50, 50));
 
 	Mat frame, img, mask, img2;
 
