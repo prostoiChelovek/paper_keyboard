@@ -107,7 +107,6 @@ int main(int argc, char **argv)
 		frame.copyTo(img);
 		frame.copyTo(img2);
 
-		pk.checkPrintedText();
 		pk.adjustKeyboard(img2);
 		mask = pk.detectHands(img);
 		pk.getClicks();

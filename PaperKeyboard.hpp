@@ -22,7 +22,6 @@ class PaperKeyboard
 
 	vector<PKBKey> keys;
 	Finger lastHigherFinger;
-	string printedText = "";
 	Size fontSize = Size(10, 10);
 
 	function<void(const Point &, const PKBKey &)> onClick;
@@ -222,25 +221,14 @@ class PaperKeyboard
 		}
 	}
 
-	void checkPrintedText()
-	{
-		if (printedText.size() >= 10)
-			printedText = "";
-	}
-
 	void drawKeys(Mat &img, Scalar color = Scalar(255, 0, 0))
 	{
 		for (PKBKey &k : keys)
 			k.draw(img, color, fontSize);
 	}
-	void drawText(Mat &img, Scalar color = Scalar(0, 255, 0), Point pos = Point(200, 200))
-	{
-		putText(img, printedText, pos, FONT_HERSHEY_DUPLEX, 1, color, 2);
-	}
 	void draw(Mat &img, Scalar color = Scalar(255, 0, 0))
 	{
 		drawKeys(img, color);
-		drawText(img, color, Point(10, 450));
 		hd.drawHands(img, color);
 	}
 };
