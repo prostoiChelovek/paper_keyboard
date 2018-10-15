@@ -3,6 +3,8 @@
 
 #include <opencv2/opencv.hpp>
 
+#include <future>
+
 #include "handDetector/handDetector.hpp"
 #include "pkbkey.hpp"
 
@@ -179,17 +181,20 @@ class PaperKeyboard
 		return PKBKey();
 	}
 
-	void setOnclick(function<void (const Point &, const PKBKey &)> f)
+	void setOnclick(function<void(const Point &, const PKBKey &)> f)
 	{
 		onClickSet = true;
 		onClick = f;
 	}
 
-	void callOnclick(const Point &p, const PKBKey &k)
+	void callOnclick(const Point &p, const PKBKey &k, bool runAsync = true)
 	{
-		if(!onClickSet)
+		if (!onClickSet)
 			return;
-		onClick(p, k);
+		if(runAsync)
+			async(launch::async, onClick, p, k);
+		else
+			onClick(p, k);
 	}
 
 	// TODO: make correct click detection
