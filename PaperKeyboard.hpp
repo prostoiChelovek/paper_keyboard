@@ -28,8 +28,10 @@ class PaperKeyboard
 	bool onClickSet = false;
 
 	time_t lastClickTime = time(0);
-
 	vector<string> keysVec;
+
+	String adjRngWName = "adjust color ranges";
+	String adjKbWName = "adjust keyboard";
 
 	PaperKeyboard()
 	{
@@ -63,24 +65,23 @@ class PaperKeyboard
 
 	void adjustColorRanges()
 	{
-		String wName = "adjust color ranges";
-		namedWindow(wName);
+		namedWindow(adjRngWName);
 		auto onTrackbarActivity = [](int val, void *data) {
 			double &vNum = *(static_cast<double *>(data));
 			vNum = double(val);
 		};
-		createTrackbar("CrMin", wName, 0, 255, onTrackbarActivity, &YCrCb_lower.val[0]);
-		createTrackbar("CrMax", wName, 0, 255, onTrackbarActivity, &YCrCb_upper.val[0]);
-		createTrackbar("CbMin", wName, 0, 255, onTrackbarActivity, &YCrCb_lower.val[1]);
-		createTrackbar("CbMax", wName, 0, 255, onTrackbarActivity, &YCrCb_upper.val[1]);
-		createTrackbar("YMin", wName, 0, 255, onTrackbarActivity, &YCrCb_lower.val[2]);
-		createTrackbar("YMax", wName, 0, 255, onTrackbarActivity, &YCrCb_upper.val[2]);
-		setTrackbarPos("CrMin", wName, int(YCrCb_lower.val[0]));
-		setTrackbarPos("CrMax", wName, int(YCrCb_upper.val[0]));
-		setTrackbarPos("CbMin", wName, int(YCrCb_lower.val[1]));
-		setTrackbarPos("CbMax", wName, int(YCrCb_upper.val[1]));
-		setTrackbarPos("YMin", wName, int(YCrCb_lower.val[2]));
-		setTrackbarPos("YMax", wName, int(YCrCb_upper.val[2]));
+		createTrackbar("CrMin", adjRngWName, 0, 255, onTrackbarActivity, &YCrCb_lower.val[0]);
+		createTrackbar("CrMax", adjRngWName, 0, 255, onTrackbarActivity, &YCrCb_upper.val[0]);
+		createTrackbar("CbMin", adjRngWName, 0, 255, onTrackbarActivity, &YCrCb_lower.val[1]);
+		createTrackbar("CbMax", adjRngWName, 0, 255, onTrackbarActivity, &YCrCb_upper.val[1]);
+		createTrackbar("YMin", adjRngWName, 0, 255, onTrackbarActivity, &YCrCb_lower.val[2]);
+		createTrackbar("YMax", adjRngWName, 0, 255, onTrackbarActivity, &YCrCb_upper.val[2]);
+		setTrackbarPos("CrMin", adjRngWName, int(YCrCb_lower.val[0]));
+		setTrackbarPos("CrMax", adjRngWName, int(YCrCb_upper.val[0]));
+		setTrackbarPos("CbMin", adjRngWName, int(YCrCb_lower.val[1]));
+		setTrackbarPos("CbMax", adjRngWName, int(YCrCb_upper.val[1]));
+		setTrackbarPos("YMin", adjRngWName, int(YCrCb_lower.val[2]));
+		setTrackbarPos("YMax", adjRngWName, int(YCrCb_upper.val[2]));
 	}
 
 	vector<Point> tmpPoints;
@@ -90,8 +91,7 @@ class PaperKeyboard
 		if (keys.size() == keysVec.size())
 			return;
 
-		String wName = "adjust keyboard";
-		namedWindow(wName);
+		namedWindow(adjKbWName);
 
 		auto mouseCallback = [](int event, int x, int y, int, void *data) {
 			vector<Point> &tmpPoints = *(static_cast<vector<Point> *>(data));
@@ -102,7 +102,7 @@ class PaperKeyboard
 				break;
 			};
 		};
-		setMouseCallback(wName, mouseCallback, &tmpPoints);
+		setMouseCallback(adjKbWName, mouseCallback, &tmpPoints);
 		if (tmpPoints.size() == 4)
 		{
 			addKey(tmpPoints[0], tmpPoints[1], tmpPoints[2], tmpPoints[3],
@@ -117,10 +117,10 @@ class PaperKeyboard
 		{
 			circle(img, p, 3, Scalar(0, 0, 0));
 		}
-		imshow(wName, img);
+		imshow(adjKbWName, img);
 
 		if (keys.size() == keysVec.size())
-			destroyWindow(wName);
+			destroyWindow(adjKbWName);
 	}
 
 	void addKey(Point x1, Point x2, Point y1, Point y2, string text)

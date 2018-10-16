@@ -58,7 +58,7 @@ void onClick(const Point &p, const PKBKey &k)
 
 int main(int argc, char **argv)
 {
-	VideoCapture cap(1);
+	VideoCapture cap(0);
 	if (!cap.isOpened())
 	{
 		cerr << "Unable to open video capture" << endl;
