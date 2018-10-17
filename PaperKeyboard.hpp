@@ -7,6 +7,7 @@
 
 #include "handDetector/handDetector.hpp"
 #include "pkbkey.hpp"
+#include "utils.hpp"
 
 using namespace std;
 using namespace cv;
@@ -21,7 +22,7 @@ class PaperKeyboard
 	Scalar YCrCb_upper = Scalar(200, 209, 150);
 
 	vector<PKBKey> keys;
-	Finger lastHigherFinger;
+	int lastDist;
 	Size fontSize = Size(10, 10);
 
 	function<void(const Point &, const PKBKey &)> onClick;
@@ -59,7 +60,7 @@ class PaperKeyboard
 		if (hd.hands.size() > 0)
 		{
 			if (hd.hands[0].higherFinger.ok)
-				lastHigherFinger = hd.hands[0].higherFinger;
+				lastDist = getDist(hd.hands[0].higherFinger.ptFar, hd.hands[0].higherFinger.ptStart);
 		}
 	}
 
@@ -202,10 +203,10 @@ class PaperKeyboard
 		if (hd.hands.size() >= 1)
 		{
 			Finger &cf = hd.hands[0].higherFinger;
-			if (cf.ok && lastHigherFinger.ok)
+			if (cf.ok)
 			{
-				int diffDist = (cf.ptFar.y - cf.ptStart.y) - (lastHigherFinger.ptFar.y - lastHigherFinger.ptStart.y);
-				if (diffDist > 5 && diffDist < 40)
+				int diffDist = lastDist - (int)getDist(cf.ptFar, cf.ptStart);
+				if (diffDist > -5 && diffDist < 10)
 				{
 					PKBKey k = getKeyByPoint(Point(cf.ptStart.x + 10, cf.ptStart.y));
 					if (k.x1.x != -1)
