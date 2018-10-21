@@ -17,6 +17,7 @@ Mat PaperKeyboard::detectHands(Mat img) {
     hd.getFingers();
     hd.getCenters();
     hd.getHigherFingers();
+    hd.getFarthestFingers();
 
     return mask;
 }
@@ -24,8 +25,8 @@ Mat PaperKeyboard::detectHands(Mat img) {
 // TODO: fix this
 void PaperKeyboard::setLast() {
     if (!hd.hands.empty()) {
-        if (hd.hands[0].higherFinger.ok)
-            lastDist = getDist(hd.hands[0].higherFinger.ptFar, hd.hands[0].higherFinger.ptStart);
+        if (hd.hands[0].farthestFinger.ok)
+            lastDist = getDist(hd.hands[0].farthestFinger.ptFar, hd.hands[0].farthestFinger.ptStart);
     }
 }
 
@@ -146,7 +147,7 @@ void PaperKeyboard::callOnclick(const Point &p, const PKBKey &k, bool runAsync) 
 
 void PaperKeyboard::getClicks() {
     if (!hd.hands.empty()) {
-        Finger &cf = hd.hands[0].higherFinger;
+        Finger &cf = hd.hands[0].farthestFinger;
         if (cf.ok) {
             int diffDist = lastDist - (int) getDist(cf.ptFar, cf.ptStart);
             if (diffDist > minDistChange && diffDist < maxDistChange) {
