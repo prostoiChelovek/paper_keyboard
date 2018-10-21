@@ -6,8 +6,8 @@
 #include <future>
 
 #include "PKBKey.h"
-#include "utils.h"
 
+#include "handDetector/utils.h"
 #include "handDetector/HandDetector.h"
 
 class PaperKeyboard {

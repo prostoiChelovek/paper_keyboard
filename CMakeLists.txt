@@ -14,7 +14,7 @@ set(SOURCE_FILES main.cpp)
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -lpthread")
 
-add_executable(PaperKeyboard main.cpp PaperKeyboard.cpp PaperKeyboard.h PKBKey.cpp PKBKey.h utils.cpp utils.h)
+add_executable(PaperKeyboard main.cpp PaperKeyboard.cpp PaperKeyboard.h PKBKey.cpp PKBKey.h)
 
 target_link_libraries(PaperKeyboard ${OpenCV_LIBS})
 target_link_libraries(PaperKeyboard ${libserial_LIBRARIES})
