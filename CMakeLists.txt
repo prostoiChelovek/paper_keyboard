@@ -9,19 +9,19 @@ find_package(OpenCV REQUIRED)
 find_package(HandDetector REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(libserial REQUIRED libserial)
+pkg_check_modules(zbar REQUIRED zbar)
+pkg_check_modules(libqrencode REQUIRED libqrencode)
 
 set(SOURCE_FILES main.cpp)
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -lpthread")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wno-sign-compare")
 
-add_executable(PaperKeyboard main.cpp PaperKeyboard.cpp PaperKeyboard.h PKBKey.cpp PKBKey.h)
+add_executable(PaperKeyboard main.cpp PaperKeyboard.cpp PaperKeyboard.h PKBKey.cpp PKBKey.h QR.cpp QR.h utils.cpp utils.h)
 
 target_link_libraries(PaperKeyboard ${OpenCV_LIBS})
 target_link_libraries(PaperKeyboard ${libserial_LIBRARIES})
-
-if (HandDetector_FOUND)
-    include_directories(${HandDetector_INCLUDE_DIR})
-    target_link_libraries(PaperKeyboard ${HANDDETECTOR_LIBRARY})
-else (HandDetector_FOUND)
-    message(FATAL_ERROR "HandDetector library not found")
-endif (HandDetector_FOUND)
+target_link_libraries(PaperKeyboard ${zbar_LIBRARIES})
+target_link_libraries(PaperKeyboard ${libqrencode_LIBRARIES})
+target_link_libraries(PaperKeyboard pthread)
+target_link_libraries(PaperKeyboard ${HandDetector_LIBRARY})
+include_directories(${HandDetector_INCLUDE_DIR})

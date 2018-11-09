@@ -4,9 +4,6 @@
 
 #include <SerialStream.h>
 
-#define Q_KEY 1048689
-#define B_KEY 1048674
-
 using namespace std;
 using namespace cv;
 using namespace LibSerial;
@@ -20,7 +17,7 @@ bool openSerial(string port)
     serial.SetBaudRate(SerialStreamBuf::BaudRateEnum::BAUD_9600);
     serial.SetNumOfStopBits(1);
     serial.SetFlowControl(SerialStreamBuf::FLOW_CONTROL_NONE);
-    return !serial.good() ? false : true;
+    return serial.good();
 }
 
 bool writeSerial(const string &str) {
@@ -78,9 +75,14 @@ int main(int argc, char **argv)
             "1", "2", "3", "4", "5", "6", "R", "G", "B"};
 
     pk.setOnclick(onClick);
-    //pk.addKeysByVec(Point(10, 10), Size(50, 50));
+    pk.addKeysByVec(Point(50, 200), Size(30, 30));
 
     Mat frame, img, mask, img2;
+
+    Mat i(A4_SIZE, CV_8UC1, Scalar(255, 255, 255));
+    pk.prepare4Print(i);
+
+    pk.adjustKeyboardByQR(i);
 
     cap >> pk.bg;
     flipImg(pk.bg, pk.bg);
@@ -91,7 +93,7 @@ int main(int argc, char **argv)
         frame.copyTo(img);
         frame.copyTo(img2);
 
-        pk.adjustKeyboard(img2);
+//        pk.adjustKeyboard(img2);
         mask = pk.detectHands(img);
         pk.getClicks();
 
@@ -102,21 +104,20 @@ int main(int argc, char **argv)
         pk.setLast();
 
         // handling keystrokes
-        int key = waitKeyEx(1);
-        switch (key) {
-            case Q_KEY: // exit
+        char key = waitKey(1);
+        if (key != -1) {
+            if (key == 'q' || key == 'Q') { // exit
+                cout << "exit" << endl;
                 return EXIT_SUCCESS;
-            case B_KEY: // change bg
+            } else if (key == 'b' || key == 'B') { // change bg
                 cap >> pk.bg;
                 flipImg(pk.bg, pk.bg);
-
                 cout << "Background changed." << endl;
-                break;
-            default:
-                if (key != -1)
-                    printf("Key presed: %i\n", key);
-                break;
+            } else {
+                printf("Key pressed: %c\n", key);
+            }
         }
+
     }
     cap.release();
     return EXIT_SUCCESS;
