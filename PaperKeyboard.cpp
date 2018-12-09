@@ -33,12 +33,12 @@ void PaperKeyboard::adjustColorRanges() {
         double &vNum = *(static_cast<double *>(data));
         vNum = double(val);
     };
-    createTrackbar("CrMin", adjRngWName, 0, 255, onTrackbarActivity, &YCrCb_lower.val[0]);
-    createTrackbar("CrMax", adjRngWName, 0, 255, onTrackbarActivity, &YCrCb_upper.val[0]);
-    createTrackbar("CbMin", adjRngWName, 0, 255, onTrackbarActivity, &YCrCb_lower.val[1]);
-    createTrackbar("CbMax", adjRngWName, 0, 255, onTrackbarActivity, &YCrCb_upper.val[1]);
-    createTrackbar("YMin", adjRngWName, 0, 255, onTrackbarActivity, &YCrCb_lower.val[2]);
-    createTrackbar("YMax", adjRngWName, 0, 255, onTrackbarActivity, &YCrCb_upper.val[2]);
+    createTrackbar("CrMin", adjRngWName, nullptr, 255, onTrackbarActivity, &YCrCb_lower.val[0]);
+    createTrackbar("CrMax", adjRngWName, nullptr, 255, onTrackbarActivity, &YCrCb_upper.val[0]);
+    createTrackbar("CbMin", adjRngWName, nullptr, 255, onTrackbarActivity, &YCrCb_lower.val[1]);
+    createTrackbar("CbMax", adjRngWName, nullptr, 255, onTrackbarActivity, &YCrCb_upper.val[1]);
+    createTrackbar("YMin", adjRngWName, nullptr, 255, onTrackbarActivity, &YCrCb_lower.val[2]);
+    createTrackbar("YMax", adjRngWName, nullptr, 255, onTrackbarActivity, &YCrCb_upper.val[2]);
     setTrackbarPos("CrMin", adjRngWName, int(YCrCb_lower.val[0]));
     setTrackbarPos("CrMax", adjRngWName, int(YCrCb_upper.val[0]));
     setTrackbarPos("CbMin", adjRngWName, int(YCrCb_lower.val[1]));
@@ -47,7 +47,7 @@ void PaperKeyboard::adjustColorRanges() {
     setTrackbarPos("YMax", adjRngWName, int(YCrCb_upper.val[2]));
 }
 
-void PaperKeyboard::adjustKeyboard(Mat &img) {
+void PaperKeyboard::adjustKeyboardManually(Mat &img) {
     if (keys.size() == keysVec.size())
         return;
 
@@ -56,12 +56,12 @@ void PaperKeyboard::adjustKeyboard(Mat &img) {
     auto mouseCallback = [](int event, int x, int y, int, void *data) {
         vector<Point> &tmpPoints = *(static_cast<vector<Point> *>(data));
         if (event == CV_EVENT_LBUTTONDOWN) {
-            tmpPoints.push_back(Point(x, y));
+            tmpPoints.emplace_back(x, y);
         }
     };
     setMouseCallback(adjKbWName, mouseCallback, &tmpPoints);
     if (tmpPoints.size() == 4) {
-        keysPositions.push_back(vector<Point>{tmpPoints[0], tmpPoints[1], tmpPoints[2], tmpPoints[3]});
+        keysPositions.emplace_back(vector<Point>{tmpPoints[0], tmpPoints[1], tmpPoints[2], tmpPoints[3]});
         addKey(tmpPoints[0], tmpPoints[1], tmpPoints[2], tmpPoints[3],
                keysVec[keys.size()]);
         tmpPoints.clear();
@@ -71,16 +71,103 @@ void PaperKeyboard::adjustKeyboard(Mat &img) {
             FONT_HERSHEY_DUPLEX, 1, Scalar(0, 143, 143), 2);
 
     for (const Point &p : tmpPoints) {
-        circle(img, p, 3, Scalar(0, 0, 0));
+        circle(img, p, 3, COLOR_BLACK);
     }
     imshow(adjKbWName, img);
 
-    if (keys.size() == keysVec.size())
+    if (keys.size() == keysVec.size()) {
+        tmpPoints.clear();
         destroyWindow(adjKbWName);
+    }
 }
 
+void PaperKeyboard::adjustKeyboardByQR(Mat img) {
+    vector<Decoded_QRCode> decoded;
+    decodeQr(move(img), decoded);
+    vector<string> splits;
+    for (const Decoded_QRCode &q : decoded) {
+        split(q.data, splits, '\n');
+        if (splits[0] != PKB_HEADER)
+            break;
+        int keysStartLine = 3;
+        int mode = stoi(splits[1]);
+        int sclLineLength = stoi(splits[2]);
+        double scale = 1;
+        double angle = 1;
+        int indent = 0;
+        if (mode == PKB_PRINT_TYPE_4 || mode == PKB_PRINT_TYPE_2) {
+            indent = stoi(splits[3]);
+            keysStartLine++;
+        }
+
+        if (!scaleLine.empty() && mode != PKB_PRINT_TYPE_3) {
+            scale = sclLineLength / getDist(scaleLine[0], scaleLine[1]);
+            angle = getAngle(scaleLine[1], scaleLine[0]);
+            cout << scale << " " << angle << endl;
+        }
+        for (auto sp = splits.begin() + keysStartLine; sp != splits.end(); ++sp) {
+            vector<string> splits2;
+            split(*sp, splits2, ' ');
+            if (splits2.size() != 9)
+                break;
+            vector<int> cords;
+            for (int i = 1; i < splits2.size(); i++) {
+                try {
+                    cords.emplace_back(stoi(splits2[i]));
+                } catch (...) {
+                    continue;
+                }
+            }
+            for (int i = 0; i < cords.size(); i += 2) {
+                cords[i] /= scale;
+                cords[i + 1] /= scale;
+                if (mode != PKB_PRINT_TYPE_4) {
+                    cords[i] += q.location[2].x;
+                    cords[i + 1] += q.location[2].y;
+                } else {
+                    if (scaleLine.empty()) {
+                        cerr << "Please pick out gauge line!" << endl;
+                        return;
+                    }
+                    cords[i] += scaleLine[0].x;
+                    cords[i + 1] += scaleLine[1].y + indent;
+                }
+            }
+            addKey(Point(cords[0], cords[1]),
+                   Point(cords[2], cords[3]),
+                   Point(cords[4], cords[5]),
+                   Point(cords[6], cords[7]), splits2[0]);
+        }
+    }
+}
+
+void PaperKeyboard::adjustScale(Mat &img) {
+    if (!scaleLine.empty())
+        return;
+    namedWindow(adjScWName);
+    auto mouseCallback = [](int event, int x, int y, int, void *data) {
+        vector<Point> &tmpPoints = *(static_cast<vector<Point> *>(data));
+        if (event == CV_EVENT_LBUTTONDOWN) {
+            tmpPoints.emplace_back(x, y);
+        }
+    };
+    setMouseCallback(adjScWName, mouseCallback, &tmpPoints);
+
+    for (const Point &p : tmpPoints) {
+        circle(img, p, 3, Scalar(255, 0, 0));
+    }
+    imshow(adjScWName, img);
+
+    if (tmpPoints.size() == 2) {
+        scaleLine.swap(tmpPoints);
+        destroyWindow(adjScWName);
+        tmpPoints.clear();
+    }
+}
+
+
 void PaperKeyboard::addKey(Point x1, Point x2, Point y1, Point y2, string text) {
-    keys.push_back(PKBKey(x1, x2, y1, y2, text));
+    keys.emplace_back(x1, x2, y1, y2, text);
 }
 
 vector<vector<Point>> PaperKeyboard::getKeysPositions(Point x1, Size ksize) {
@@ -98,10 +185,10 @@ vector<vector<Point>> PaperKeyboard::getKeysPositions(Point x1, Size ksize) {
             continue;
         }
         int aW = s.size() > 1 ? fontSize.width * (s.size() + 1) : 0;
-        Point X1(lX, x1.y + ksize.width * r);
+        Point X1(lX, x1.y);
         Point X2(X1.x + ksize.width + aW, X1.y);
-        res.push_back(vector<Point>{X1, X2, Point(X1.x, X1.y + ksize.height),
-                                    Point(X2.x, X1.y + ksize.height)});
+        res.emplace_back(vector<Point>{X1, X2, Point(X1.x, X1.y + ksize.height),
+                                       Point(X2.x, X1.y + ksize.height)});
         i++;
         lX = X2.x;
     }
@@ -142,7 +229,7 @@ PKBKey PaperKeyboard::getKeyByPoint(Point p) {
 
 void PaperKeyboard::setOnclick(function<void(const Point &, const PKBKey &)> f) {
     onClickSet = true;
-    onClick = f;
+    onClick = move(f);
 }
 
 void PaperKeyboard::callOnclick(const Point &p, const PKBKey &k, bool runAsync) {
@@ -182,35 +269,15 @@ void PaperKeyboard::draw(Mat &img, Scalar color) {
     hd.drawHands(img, color);
 }
 
-void PaperKeyboard::adjustKeyboardByQR(Mat img) {
-    vector<Decoded_QRCode> decoded;
-    decodeQr(img, decoded);
-    vector<string> splits; // split string into lines
-    vector<string> splits2; // split lines by space
-    for (const Decoded_QRCode &q : decoded) {
-        split(q.data, splits, '\n');
-        if (splits[0] != "%PKB%")
-            break;
-        for (auto sp = splits.begin() + 2; sp != splits.end(); ++sp) {
-            split(*sp, splits2, ' ');
-            if (splits2.size() != 9)
-                break;
-            addKey(Point(stoi(splits2[1]), stoi(splits2[2])),
-                   Point(stoi(splits2[3]), stoi(splits2[4])),
-                   Point(stoi(splits2[5]), stoi(splits2[6])),
-                   Point(stoi(splits2[7]), stoi(splits2[8])), splits2[0]);
-
-        }
-        splits2.clear();
-    }
-}
-
-string PaperKeyboard::serialize2str() {
+string PaperKeyboard::serialize2str(int printType) {
     string res;
     int i = 0;
 
-    res += "%PKB%\n";
+    res += string(PKB_HEADER) + "\n";
+    res += to_string(printType) + "\n";
     res += to_string(GaugeLineLength) + "\n";
+    if (printType == PKB_PRINT_TYPE_4 || printType == PKB_PRINT_TYPE_2)
+        res += to_string(GL_KB_INDENT) + "\n";
 
     for (const vector<Point> &p : keysPositions) {
         res += keysVec[i] + " ";
@@ -228,12 +295,35 @@ string PaperKeyboard::serialize2str() {
     return res;
 }
 
-void PaperKeyboard::prepare4Print(Mat &img) {
+void PaperKeyboard::prepare4Print(Mat &img, int printType) {
+    if (printType > PKB_PRINT_TYPES_NUM) printType = PKB_PRINT_TYPES_NUM;
+
     resize(img, img, Size(A4_SIZE.height, A4_SIZE.width));
-    Mat qr(150, 150, CV_8UC1, Scalar(255, 255, 255));
-    encodeQr(qr, serialize2str());
-    qr.copyTo(img(Rect(0, 0, qr.cols, qr.rows)));
-    line(img, Point(qr.cols, 10), Point(qr.cols + GaugeLineLength, 10), Scalar(0, 0, 0), 2);
-    drawKeys(img, Scalar(0, 0, 0));
-    imshow("i", img);
+    Mat qr(190, 190, CV_8UC1, COLOR_WHITE);
+
+    if (printType != PKB_PRINT_TYPE_1 && printType != PKB_PRINT_TYPE_2) {
+        encodeQr(qr, serialize2str(printType));
+        if (printType == PKB_PRINT_TYPE_4)
+            qr.copyTo(img(Rect(img.cols - qr.cols, img.rows - qr.rows, qr.cols, qr.rows)));
+        else
+            qr.copyTo(img(Rect(0, 0, qr.cols, qr.rows)));
+    }
+    if (printType != PKB_PRINT_TYPE_1 && printType != PKB_PRINT_TYPE_3) {
+        line(img, Point(10, 10), Point(10 + GaugeLineLength, 10), COLOR_BLACK, 2);
+    }
+    Mat keysIm(img.rows, img.cols, CV_8UC1, COLOR_WHITE);
+    if (printType == PKB_PRINT_TYPE_3)
+        resize(keysIm, keysIm, Size(keysIm.cols - qr.cols, keysIm.rows - qr.rows));
+    else if (printType == PKB_PRINT_TYPE_2)
+        resize(keysIm, keysIm, Size(keysIm.cols - 10, keysIm.rows - 10 - GL_KB_INDENT));
+    else if (printType == PKB_PRINT_TYPE_4)
+        resize(keysIm, keysIm, Size(keysIm.cols - qr.cols, keysIm.rows - qr.rows - 10 - GL_KB_INDENT));
+
+    drawKeys(keysIm, COLOR_BLACK);
+    if (printType == PKB_PRINT_TYPE_3)
+        keysIm.copyTo(img(Rect(qr.cols, qr.rows, keysIm.cols, keysIm.rows)));
+    else if (printType == PKB_PRINT_TYPE_4 || printType == PKB_PRINT_TYPE_2)
+        keysIm.copyTo(img(Rect(10, 10 + GL_KB_INDENT, keysIm.cols, keysIm.rows)));
+    else
+        keysIm.copyTo(img(Rect(0, 0, keysIm.cols, keysIm.rows)));
 }

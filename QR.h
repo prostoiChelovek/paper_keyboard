@@ -13,6 +13,10 @@ typedef struct {
     string type;
     string data;
     vector<Point> location;
+    // 0 - left top
+    // 1 - left bottom
+    // 2 - right bottom
+    // 3 - right top
 } Decoded_QRCode;
 
 void encodeQr(Mat &img, string text);

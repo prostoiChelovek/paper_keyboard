@@ -8,7 +8,7 @@ PKBKey::PKBKey(Point x1_, Point x2_, Point y1_, Point y2_, string text_) {
     x2 = x2_;
     y1 = y1_;
     y2 = y2_;
-    text = text_;
+    text = move(text_);
 }
 
 void PKBKey::draw(Mat &img, Scalar color, Size fontSize) {

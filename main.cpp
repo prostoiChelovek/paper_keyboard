@@ -12,7 +12,7 @@ SerialStream serial;
 
 bool openSerial(string port)
 {
-    serial.Open(port);
+    serial.Open(move(port));
     serial.SetCharSize(SerialStreamBuf::CHAR_SIZE_8);
     serial.SetBaudRate(SerialStreamBuf::BaudRateEnum::BAUD_9600);
     serial.SetNumOfStopBits(1);
@@ -44,7 +44,7 @@ void onClick(const Point &p, const PKBKey &k)
 
 int main(int argc, char **argv)
 {
-    VideoCapture cap(0);
+    VideoCapture cap(1);
     if (!cap.isOpened()) {
         cerr << "Unable to open video capture" << endl;
         return EXIT_FAILURE;
@@ -75,14 +75,13 @@ int main(int argc, char **argv)
             "1", "2", "3", "4", "5", "6", "R", "G", "B"};
 
     pk.setOnclick(onClick);
-    pk.addKeysByVec(Point(50, 200), Size(30, 30));
+    pk.addKeysByVec(Point(0, 0), Size(30, 30));
 
     Mat frame, img, mask, img2;
 
     Mat i(A4_SIZE, CV_8UC1, Scalar(255, 255, 255));
-    pk.prepare4Print(i);
-
-    pk.adjustKeyboardByQR(i);
+    pk.prepare4Print(i, PKB_PRINT_TYPE_4);
+    imshow("i", i);
 
     cap >> pk.bg;
     flipImg(pk.bg, pk.bg);
@@ -92,8 +91,8 @@ int main(int argc, char **argv)
         flipImg(frame, frame);
         frame.copyTo(img);
         frame.copyTo(img2);
-
-//        pk.adjustKeyboard(img2);
+        pk.adjustScale(img2);
+//        pk.adjustKeyboardManually(img2);
         mask = pk.detectHands(img);
         pk.getClicks();
 
@@ -113,6 +112,13 @@ int main(int argc, char **argv)
                 cap >> pk.bg;
                 flipImg(pk.bg, pk.bg);
                 cout << "Background changed." << endl;
+            } else if (key == 'a' || key == 'A') { // adjust keyboard by QR
+                pk.keys.clear();
+                pk.adjustKeyboardByQR(img2);
+                if (!pk.keys.empty())
+                    cout << "Keyboard adjusted" << endl;
+                else
+                    cout << "Keyboard isn`t adjusted" << endl;
             } else {
                 printf("Key pressed: %c\n", key);
             }

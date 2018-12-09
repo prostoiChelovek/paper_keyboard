@@ -19,6 +19,19 @@ using namespace cv;
 #define A4_SIZE Size(595, 842)
 #define GaugeLineLength 100 // px
 
+#define GL_KB_INDENT 10 // indent between gauge line and keyboard
+
+#define COLOR_WHITE Scalar(255, 255, 255)
+#define COLOR_BLACK Scalar(0, 0, 0)
+
+#define PKB_PRINT_TYPE_1 1 // without qr code and gauge line
+#define PKB_PRINT_TYPE_2 2 // without qr code and with gauge line
+#define PKB_PRINT_TYPE_3 3 // without gauge line
+#define PKB_PRINT_TYPE_4 4 // qr code on a separate sheet
+#define PKB_PRINT_TYPES_NUM 4
+
+#define PKB_HEADER "%PKB%"
+
 class PaperKeyboard {
 public:
     Mat bg;
@@ -34,15 +47,16 @@ public:
     function<void(const Point &, const PKBKey &)> onClick;
     bool onClickSet = false;
 
-    time_t lastClickTime = time(0);
-    int lastDist;
+    time_t lastClickTime = time(nullptr);
     float clickDelay = 1; // seconds
     int minDistChange = -5;
     int maxDistChange = 10;
 
+    vector<Point> scaleLine;
     vector<string> keysVec;
     String adjRngWName = "adjust color ranges";
     String adjKbWName = "adjust keyboard";
+    String adjScWName = "adjust scale";
 
     PaperKeyboard();
 
@@ -53,7 +67,9 @@ public:
 
     void adjustColorRanges();
 
-    void adjustKeyboard(Mat &img);
+    void adjustKeyboardManually(Mat &img);
+
+    void adjustScale(Mat &img); // do not call together with adjustKeyboardManually
 
     void addKey(Point x1, Point x2, Point y1, Point y2, string text);
 
@@ -62,9 +78,9 @@ public:
 
     void adjustKeyboardByQR(Mat img);
 
-    void prepare4Print(Mat &img);
+    void prepare4Print(Mat &img, int printType = 1);
 
-    string serialize2str();
+    string serialize2str(int printType = 1);
 
     // set num as -1 to not use limitation
     void deleteKeysByText(string text, int num = 1);
@@ -83,6 +99,7 @@ public:
 
 private:
     vector<Point> tmpPoints;
+    int lastDist;
 };
 
 #endif //PAPERKEYBOARD_PAPERKEYBOARD_H

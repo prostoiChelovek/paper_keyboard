@@ -16,7 +16,7 @@ void decodeQr(const Mat img, vector<Decoded_QRCode> &decodedObjects) {
         img.copyTo(imGray);
 
     // Wrap image data in a zbar image
-    Image image(img.cols, img.rows, "Y800", (uchar *) imGray.data, img.cols * img.rows);
+    Image image(img.cols, img.rows, "Y800", imGray.data, img.cols * img.rows);
 
     // Scan the image for barcodes and QRCodes
     int n = scanner.scan(image);
@@ -33,7 +33,7 @@ void decodeQr(const Mat img, vector<Decoded_QRCode> &decodedObjects) {
 
         // Obtain location
         for (int i = 0; i < symbol->get_location_size(); i++) {
-            obj.location.push_back(Point(symbol->get_location_x(i), symbol->get_location_y(i)));
+            obj.location.emplace_back(Point(symbol->get_location_x(i), symbol->get_location_y(i)));
         }
 
         decodedObjects.push_back(obj);
@@ -42,7 +42,7 @@ void decodeQr(const Mat img, vector<Decoded_QRCode> &decodedObjects) {
 
 // img must have size
 void encodeQr(Mat &img, string text) {
-    int version = 3;
+    int version = 4;
     QRecLevel level = QR_ECLEVEL_M;
     QRencodeMode hint = QR_MODE_8;
     int casesensitive = 1;
@@ -50,7 +50,8 @@ void encodeQr(Mat &img, string text) {
     int margin = 2;
 
     QRcode *code = QRcode_encodeString(text.c_str(), version, level, hint, casesensitive);
-    if (code == NULL) {
+    if (code == nullptr) {
+        cerr << "QR code generation error" << endl;
         return;
     }
 
@@ -73,4 +74,3 @@ void encodeQr(Mat &img, string text) {
         }
     }
 }
-
