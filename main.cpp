@@ -50,7 +50,7 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-    string portDev = "/dev/ttyACM0";
+    string portDev = "/dev/ttyUSB0";
     if (!openSerial(portDev)) {
         cerr << "Unable to open serial port " << portDev << endl;
     } else {

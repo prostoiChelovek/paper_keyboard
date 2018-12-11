@@ -19,11 +19,22 @@ Mat PaperKeyboard::detectHands(Mat img) {
     return mask;
 }
 
-// TODO: fix this
 void PaperKeyboard::setLast() {
-    if (!hd.hands.empty()) {
-        if (hd.hands[0].farthestFinger.ok)
-            lastDist = getDist(hd.hands[0].farthestFinger.ptFar, hd.hands[0].farthestFinger.ptStart);
+    lastFingers.clear();
+    for (Hand &h : hd.hands) {
+        vector<ShortFinger> fingers;
+        Finger f;
+        if (clrf == FARTHEST)
+            f = h.farthestFinger;
+        else if (clrf == HIGHER)
+            f = h.higherFinger;
+        if (clrf == ALL) {
+            for (const Finger &fng : h.fingers) {
+                fingers.emplace_back(ShortFinger{fng.ptStart, fng.ptEnd, fng.ptFar});
+            }
+        } else
+            fingers.emplace_back(ShortFinger{f.ptStart, f.ptEnd, f.ptFar});
+        lastFingers.emplace_back(fingers);
     }
 }
 
@@ -242,19 +253,33 @@ void PaperKeyboard::callOnclick(const Point &p, const PKBKey &k, bool runAsync) 
 }
 
 void PaperKeyboard::getClicks() {
-    if (!hd.hands.empty()) {
-        Finger &cf = hd.hands[0].farthestFinger;
-        if (cf.ok) {
-            int diffDist = lastDist - (int) getDist(cf.ptFar, cf.ptStart);
-            if (diffDist > minDistChange && diffDist < maxDistChange) {
-                PKBKey k = getKeyByPoint(Point(cf.ptStart.x + 10, cf.ptStart.y));
-                if (k.x1.x != -1) {
-                    if (time(nullptr) - lastClickTime >= clickDelay) {
-                        callOnclick(cf.ptStart, k);
-                        lastClickTime = time(nullptr);
+    if (lastFingers.empty())
+        return;
+
+    for (int i = 0; i < hd.hands.size(); i++) {
+        for (int j = 0; j < hd.hands[i].fingers.size(); j++) {
+            Finger cf;
+            if (clrf == FARTHEST)
+                cf = hd.hands[i].farthestFinger;
+            else if (clrf == HIGHER)
+                cf = hd.hands[i].higherFinger;
+            else if (clrf == ALL)
+                cf = hd.hands[i].fingers[j];
+
+            if (cf.ok) {
+                ShortFinger last = getSame(lastFingers[i], cf);
+                int diffDist = getDist(last.ptFar, last.ptStart) - getDist(cf.ptFar, cf.ptStart);
+                if (diffDist > minDistChange && diffDist < maxDistChange) {
+                    PKBKey k = getKeyByPoint(Point(cf.ptStart.x + 10, cf.ptStart.y));
+                    if (k.x1.x != -1) {
+                        if (time(nullptr) - lastClickTime >= clickDelay) {
+                            callOnclick(cf.ptStart, k);
+                            lastClickTime = time(nullptr);
+                        }
                     }
                 }
             }
+            if (clrf != ALL) break;
         }
     }
 }

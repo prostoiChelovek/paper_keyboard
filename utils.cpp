@@ -34,3 +34,18 @@ void rotateImg(Mat &img, double angle) {
     Mat r = getRotationMatrix2D(pt, angle, 1.0);
     warpAffine(img, img, r, Size(img.cols, img.rows));
 }
+
+ShortFinger getSame(const vector<ShortFinger> &fingers, const Finger &f) {
+    int minDist;
+    ShortFinger res;
+    for (const ShortFinger &fn : fingers) {
+        int crDist = getDist(fn.ptStart, f.ptStart) +
+                     getDist(fn.ptEnd, f.ptEnd) +
+                     getDist(fn.ptFar, f.ptFar);
+        if (crDist < minDist) {
+            minDist = crDist;
+            res = fn;
+        }
+    }
+    return res;
+}

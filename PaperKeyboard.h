@@ -32,6 +32,13 @@ using namespace cv;
 
 #define PKB_HEADER "%PKB%"
 
+
+enum Click_rec_finger { // finger from which recognizing pressing
+    FARTHEST,
+    HIGHER,
+    ALL
+};
+
 class PaperKeyboard {
 public:
     Mat bg;
@@ -47,13 +54,16 @@ public:
     function<void(const Point &, const PKBKey &)> onClick;
     bool onClickSet = false;
 
-    time_t lastClickTime = time(nullptr);
+    time_t lastClickTime;
     float clickDelay = 1; // seconds
     int minDistChange = -5;
     int maxDistChange = 10;
 
+    Click_rec_finger clrf = ALL;
+
     vector<Point> scaleLine;
     vector<string> keysVec;
+
     String adjRngWName = "adjust color ranges";
     String adjKbWName = "adjust keyboard";
     String adjScWName = "adjust scale";
@@ -62,7 +72,6 @@ public:
 
     Mat detectHands(Mat img);
 
-    // TODO: fix this
     void setLast();
 
     void adjustColorRanges();
@@ -89,7 +98,7 @@ public:
 
     void setOnclick(function<void(const Point &, const PKBKey &)> f);
 
-    void callOnclick(const Point &p, const PKBKey &k, bool runAsync = true);
+    void callOnclick(const Point &p, const PKBKey &k, bool runAsync = false);
 
     void getClicks();
 
@@ -99,7 +108,9 @@ public:
 
 private:
     vector<Point> tmpPoints;
-    int lastDist;
+    vector<vector<ShortFinger>> lastFingers;
+
+    vector<int> lastDists; // <- this is facking magical variable, DO NOT DELETE!
 };
 
 #endif //PAPERKEYBOARD_PAPERKEYBOARD_H
