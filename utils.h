@@ -26,4 +26,6 @@ void rotateImg(Mat &img, double angle);
 
 ShortFinger getSame(const vector<ShortFinger> &fingers, const Finger &f);
 
+int safeStoi(string str);
+
 #endif //PAPERKEYBOARD_UTILS_H

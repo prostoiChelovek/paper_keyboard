@@ -95,60 +95,8 @@ void PaperKeyboard::adjustKeyboardManually(Mat &img) {
 void PaperKeyboard::adjustKeyboardByQR(Mat img) {
     vector<Decoded_QRCode> decoded;
     decodeQr(move(img), decoded);
-    vector<string> splits;
     for (const Decoded_QRCode &q : decoded) {
-        split(q.data, splits, '\n');
-        if (splits[0] != PKB_HEADER)
-            break;
-        int keysStartLine = 3;
-        int mode = stoi(splits[1]);
-        int sclLineLength = stoi(splits[2]);
-        double scale = 1;
-        double angle = 1;
-        int indent = 0;
-        if (mode == PKB_PRINT_TYPE_4 || mode == PKB_PRINT_TYPE_2) {
-            indent = stoi(splits[3]);
-            keysStartLine++;
-        }
-
-        if (!scaleLine.empty() && mode != PKB_PRINT_TYPE_3) {
-            scale = sclLineLength / getDist(scaleLine[0], scaleLine[1]);
-            angle = getAngle(scaleLine[1], scaleLine[0]);
-            cout << scale << " " << angle << endl;
-        }
-        for (auto sp = splits.begin() + keysStartLine; sp != splits.end(); ++sp) {
-            vector<string> splits2;
-            split(*sp, splits2, ' ');
-            if (splits2.size() != 9)
-                break;
-            vector<int> cords;
-            for (int i = 1; i < splits2.size(); i++) {
-                try {
-                    cords.emplace_back(stoi(splits2[i]));
-                } catch (...) {
-                    continue;
-                }
-            }
-            for (int i = 0; i < cords.size(); i += 2) {
-                cords[i] /= scale;
-                cords[i + 1] /= scale;
-                if (mode != PKB_PRINT_TYPE_4) {
-                    cords[i] += q.location[2].x;
-                    cords[i + 1] += q.location[2].y;
-                } else {
-                    if (scaleLine.empty()) {
-                        cerr << "Please pick out gauge line!" << endl;
-                        return;
-                    }
-                    cords[i] += scaleLine[0].x;
-                    cords[i + 1] += scaleLine[1].y + indent;
-                }
-            }
-            addKey(Point(cords[0], cords[1]),
-                   Point(cords[2], cords[3]),
-                   Point(cords[4], cords[5]),
-                   Point(cords[6], cords[7]), splits2[0]);
-        }
+        deserializeFromString(q.data, q.location[2]);
     }
 }
 
@@ -320,6 +268,61 @@ string PaperKeyboard::serialize2str(int printType) {
     return res;
 }
 
+bool PaperKeyboard::deserializeFromString(string str, Point startPoint) {
+    vector<string> splits;
+    split(str, splits, '\n');
+    if (splits.size() < 3) return false;
+    if (splits[0] != PKB_HEADER)
+        return false;
+    int keysStartLine = 3;
+    int mode = safeStoi(splits[1]);
+    int sclLineLength = safeStoi(splits[2]);
+    double scale = 1;
+    double angle = 1;
+    int indent = 0;
+    if (mode == PKB_PRINT_TYPE_4 || mode == PKB_PRINT_TYPE_2) {
+        indent = safeStoi(splits[3]);
+        keysStartLine++;
+    }
+
+    if (!scaleLine.empty() && mode != PKB_PRINT_TYPE_3) {
+        scale = sclLineLength / getDist(scaleLine[0], scaleLine[1]);
+        angle = getAngle(scaleLine[1], scaleLine[0]);
+        cout << scale << " " << angle << endl;
+    }
+    for (auto sp = splits.begin() + keysStartLine; sp != splits.end(); ++sp) {
+        vector<string> splits2;
+        split(*sp, splits2, ' ');
+        if (splits2.size() != 9)
+            break;
+        vector<int> cords;
+        for (int i = 1; i < splits2.size(); i++) {
+            cords.emplace_back(safeStoi(splits2[i]));
+        }
+        for (int i = 0; i < cords.size(); i += 2) {
+            cords[i] /= scale;
+            cords[i + 1] /= scale;
+            if (mode != PKB_PRINT_TYPE_4 && mode != PKB_PRINT_TYPE_2) {
+                cords[i] += startPoint.x;
+                cords[i + 1] += startPoint.y;
+            } else {
+                if (scaleLine.empty()) {
+                    cerr << "Please pick out gauge line!" << endl;
+                    return false;
+                }
+                cords[i] += scaleLine[0].x;
+                cords[i + 1] += scaleLine[1].y + indent;
+            }
+
+        }
+        addKey(Point(cords[0], cords[1]),
+               Point(cords[2], cords[3]),
+               Point(cords[4], cords[5]),
+               Point(cords[6], cords[7]), splits2[0]);
+    }
+    return true;
+}
+
 void PaperKeyboard::prepare4Print(Mat &img, int printType) {
     if (printType > PKB_PRINT_TYPES_NUM) printType = PKB_PRINT_TYPES_NUM;
 
@@ -351,4 +354,32 @@ void PaperKeyboard::prepare4Print(Mat &img, int printType) {
         keysIm.copyTo(img(Rect(10, 10 + GL_KB_INDENT, keysIm.cols, keysIm.rows)));
     else
         keysIm.copyTo(img(Rect(0, 0, keysIm.cols, keysIm.rows)));
+}
+
+bool PaperKeyboard::save2file(string filePath, int printType) {
+    if (printType > PKB_PRINT_TYPES_NUM) printType = PKB_PRINT_TYPES_NUM;
+
+    ofstream file;
+    file.open(filePath);
+    file << serialize2str(printType);
+
+    if (file.bad()) {
+        file.close();
+        return false;
+    }
+    file.close();
+    return true;
+}
+
+bool PaperKeyboard::loadFromFile(string filePath, Point startPoint) {
+    ifstream file;
+    file.open(filePath);
+    if (file.bad()) {
+        file.close();
+        return false;
+    }
+    string data((istreambuf_iterator<char>(file)),
+                (istreambuf_iterator<char>()));
+    file.close();
+    return deserializeFromString(data, startPoint);
 }

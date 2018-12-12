@@ -13,6 +13,8 @@
 #include "QR.h"
 #include "utils.h"
 
+#include <fstream>
+
 using namespace std;
 using namespace cv;
 
@@ -31,7 +33,6 @@ using namespace cv;
 #define PKB_PRINT_TYPES_NUM 4
 
 #define PKB_HEADER "%PKB%"
-
 
 enum Click_rec_finger { // finger from which recognizing pressing
     FARTHEST,
@@ -90,6 +91,14 @@ public:
     void prepare4Print(Mat &img, int printType = 1);
 
     string serialize2str(int printType = 1);
+
+    // if mode == PKB_PRINT_TYPE_4 - using startPoint
+    // else - using scaleLine
+    bool deserializeFromString(string str, Point startPoint = Point(0, 0));
+
+    bool loadFromFile(string filePath, Point startPoint = Point(0, 0));
+
+    bool save2file(string filePath, int printType = 1);
 
     // set num as -1 to not use limitation
     void deleteKeysByText(string text, int num = 1);

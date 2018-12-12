@@ -44,6 +44,8 @@ void onClick(const Point &p, const PKBKey &k)
 
 int main(int argc, char **argv)
 {
+    string currentDir = "/some/path/";
+
     VideoCapture cap(1);
     if (!cap.isOpened()) {
         cerr << "Unable to open video capture" << endl;
@@ -81,7 +83,7 @@ int main(int argc, char **argv)
 
     Mat i(A4_SIZE, CV_8UC1, Scalar(255, 255, 255));
     pk.prepare4Print(i, PKB_PRINT_TYPE_4);
-    imshow("i", i);
+    //imshow("i", i);
 
     cap >> pk.bg;
     flipImg(pk.bg, pk.bg);
@@ -119,6 +121,17 @@ int main(int argc, char **argv)
                     cout << "Keyboard adjusted" << endl;
                 else
                     cout << "Keyboard isn`t adjusted" << endl;
+            } else if (key == 's' || key == 'S') { // save
+                if (pk.save2file(currentDir + "keyboard.pkb", PKB_PRINT_TYPE_2))
+                    cout << "Keyboard configuration saved to file" << endl;
+                else
+                    cerr << "Can`t save keyboard configuration to file" << endl;
+            } else if (key == 'l' || key == 'L') {
+                pk.keys.clear();
+                if (pk.loadFromFile(currentDir + "keyboard.pkb") && !pk.keys.empty())
+                    cout << "Keyboard configuration loaded from file" << endl;
+                else
+                    cerr << "Keyboard configuration isn`t loaded from file" << endl;
             } else {
                 printf("Key pressed: %c\n", key);
             }

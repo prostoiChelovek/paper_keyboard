@@ -49,3 +49,12 @@ ShortFinger getSame(const vector<ShortFinger> &fingers, const Finger &f) {
     }
     return res;
 }
+
+int safeStoi(string str) {
+    try {
+        return stoi(str);
+    } catch (...) {
+        cerr << "Error while convering string '" << str << "' to int" << endl;
+        return NULL;
+    };
+}
