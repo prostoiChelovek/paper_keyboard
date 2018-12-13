@@ -82,7 +82,7 @@ void PaperKeyboard::adjustKeyboardManually(Mat &img) {
             FONT_HERSHEY_DUPLEX, 1, Scalar(0, 143, 143), 2);
 
     for (const Point &p : tmpPoints) {
-        circle(img, p, 3, COLOR_BLACK);
+        circle(img, p, 3, Scalar(0, 255, 0));
     }
     imshow(adjKbWName, img);
 
@@ -128,6 +128,11 @@ void PaperKeyboard::adjustScale(Mat &img) {
 void PaperKeyboard::addKey(Point x1, Point x2, Point y1, Point y2, string text) {
     keys.emplace_back(x1, x2, y1, y2, text);
 }
+
+void PaperKeyboard::addKey(Point x1, Point x2, Point y1, Point y2, pkb_key_type type, string text) {
+    keys.emplace_back(x1, x2, y1, y2, type, text);
+}
+
 
 vector<vector<Point>> PaperKeyboard::getKeysPositions(Point x1, Size ksize) {
     vector<vector<Point>> res;
@@ -186,18 +191,18 @@ PKBKey PaperKeyboard::getKeyByPoint(Point p) {
     return PKBKey();
 }
 
-void PaperKeyboard::setOnclick(function<void(const Point &, const PKBKey &)> f) {
+void PaperKeyboard::setOnclick(function<void(const Point &, PKBKey &)> f) {
     onClickSet = true;
     onClick = move(f);
 }
 
-void PaperKeyboard::callOnclick(const Point &p, const PKBKey &k, bool runAsync) {
+void PaperKeyboard::callOnclick(const Point &p, PKBKey &k, bool runAsync) {
     if (!onClickSet)
         return;
-    if (runAsync)
-        async(launch::async, onClick, p, k);
-    else
-        onClick(p, k);
+//    if (runAsync)
+//        async(launch::async, onClick, p, k);
+//    else
+    onClick(p, k);
 }
 
 void PaperKeyboard::getClicks() {
@@ -244,25 +249,14 @@ void PaperKeyboard::draw(Mat &img, Scalar color) {
 
 string PaperKeyboard::serialize2str(int printType) {
     string res;
-    int i = 0;
-
     res += string(PKB_HEADER) + "\n";
     res += to_string(printType) + "\n";
     res += to_string(GaugeLineLength) + "\n";
     if (printType == PKB_PRINT_TYPE_4 || printType == PKB_PRINT_TYPE_2)
         res += to_string(GL_KB_INDENT) + "\n";
 
-    for (const vector<Point> &p : keysPositions) {
-        res += keysVec[i] + " ";
-        res += to_string(p[0].x) + " ";
-        res += to_string(p[0].y) + " ";
-        res += to_string(p[1].x) + " ";
-        res += to_string(p[1].y) + " ";
-        res += to_string(p[2].x) + " ";
-        res += to_string(p[2].y) + " ";
-        res += to_string(p[3].x) + " ";
-        res += to_string(p[3].y) + "\n";
-        i++;
+    for (const PKBKey &k : keys) {
+        res += k.serealize2str() + "\n";
     }
 
     return res;
@@ -293,10 +287,13 @@ bool PaperKeyboard::deserializeFromString(string str, Point startPoint) {
     for (auto sp = splits.begin() + keysStartLine; sp != splits.end(); ++sp) {
         vector<string> splits2;
         split(*sp, splits2, ' ');
-        if (splits2.size() != 9)
+        if (splits2.size() < 9)
             break;
+        int cordsStart = 1;
+        if (splits2[0] == PKBK_TYPE_BUTTON)
+            cordsStart++;
         vector<int> cords;
-        for (int i = 1; i < splits2.size(); i++) {
+        for (int i = cordsStart; i < splits2.size(); i++) {
             cords.emplace_back(safeStoi(splits2[i]));
         }
         for (int i = 0; i < cords.size(); i += 2) {
@@ -313,12 +310,12 @@ bool PaperKeyboard::deserializeFromString(string str, Point startPoint) {
                 cords[i] += scaleLine[0].x;
                 cords[i + 1] += scaleLine[1].y + indent;
             }
-
         }
+        string text = splits2[0] == PKBK_TYPE_BUTTON ? splits2[1] : "";
         addKey(Point(cords[0], cords[1]),
                Point(cords[2], cords[3]),
                Point(cords[4], cords[5]),
-               Point(cords[6], cords[7]), splits2[0]);
+               Point(cords[6], cords[7]), getPKBKType(splits2[0]), text);
     }
     return true;
 }
@@ -382,4 +379,8 @@ bool PaperKeyboard::loadFromFile(string filePath, Point startPoint) {
                 (istreambuf_iterator<char>()));
     file.close();
     return deserializeFromString(data, startPoint);
+}
+
+void PaperKeyboard::clearTmpPoints() {
+    tmpPoints.clear();
 }

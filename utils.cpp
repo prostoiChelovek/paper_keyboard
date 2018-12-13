@@ -13,26 +13,8 @@ size_t split(const string &txt, vector<string> &strs, char ch) {
     return strs.size();
 }
 
-vector<int> stoiAll(vector<string> v) {
-    vector<int> res;
-    for (const string &s : v) {
-        try {
-            res.emplace_back(stoi(s));
-        } catch (...) {
-            continue;
-        }
-    }
-    return res;
-}
-
 double getAngle(Point p1, Point p2) {
     return atan2(p1.y - p2.y, p1.x - p2.x) * 180 / CV_PI;
-}
-
-void rotateImg(Mat &img, double angle) {
-    Point2f pt(img.cols / 2., img.rows / 2.);
-    Mat r = getRotationMatrix2D(pt, angle, 1.0);
-    warpAffine(img, img, r, Size(img.cols, img.rows));
 }
 
 ShortFinger getSame(const vector<ShortFinger> &fingers, const Finger &f) {
@@ -57,4 +39,14 @@ int safeStoi(string str) {
         cerr << "Error while convering string '" << str << "' to int" << endl;
         return NULL;
     };
+}
+
+vector<int> stoiAll(vector<string> v) {
+    vector<int> res;
+    for (const string &s : v) {
+        int r = safeStoi(s);
+        if (r != NULL)
+            res.emplace_back(r);
+    }
+    return res;
 }

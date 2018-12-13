@@ -52,10 +52,10 @@ public:
     vector<vector<Point>> keysPositions;
     Size fontSize = Size(10, 10);
 
-    function<void(const Point &, const PKBKey &)> onClick;
+    function<void(const Point &, PKBKey &)> onClick;
     bool onClickSet = false;
 
-    time_t lastClickTime;
+    time_t lastClickTime = time(nullptr);
     float clickDelay = 1; // seconds
     int minDistChange = -5;
     int maxDistChange = 10;
@@ -83,6 +83,8 @@ public:
 
     void addKey(Point x1, Point x2, Point y1, Point y2, string text);
 
+    void addKey(Point x1, Point x2, Point y1, Point y2, pkb_key_type type, string text = "");
+
     vector<vector<Point>> getKeysPositions(Point x1, Size ksize = Size(50, 50));
     void addKeysByVec(Point x1, Size ksize = Size(50, 50));
 
@@ -105,9 +107,9 @@ public:
 
     PKBKey getKeyByPoint(Point p);
 
-    void setOnclick(function<void(const Point &, const PKBKey &)> f);
+    void setOnclick(function<void(const Point &, PKBKey &)> f);
 
-    void callOnclick(const Point &p, const PKBKey &k, bool runAsync = false);
+    void callOnclick(const Point &p, PKBKey &k, bool runAsync = false);
 
     void getClicks();
 
@@ -115,11 +117,10 @@ public:
 
     void draw(Mat &img, Scalar color = Scalar(255, 0, 0));
 
+    void clearTmpPoints();
 private:
     vector<Point> tmpPoints;
     vector<vector<ShortFinger>> lastFingers;
-
-    vector<int> lastDists; // <- this is facking magical variable, DO NOT DELETE!
 };
 
 #endif //PAPERKEYBOARD_PAPERKEYBOARD_H
