@@ -149,7 +149,7 @@ vector<vector<Point>> PaperKeyboard::getKeysPositions(Point x1, Size ksize) {
             continue;
         }
         int aW = s.size() > 1 ? fontSize.width * (s.size() + 1) : 0;
-        Point X1(lX, x1.y);
+        Point X1(lX, x1.y + r != 1 ? ksize.height * r : 0);
         Point X2(X1.x + ksize.width + aW, X1.y);
         res.emplace_back(vector<Point>{X1, X2, Point(X1.x, X1.y + ksize.height),
                                        Point(X2.x, X1.y + ksize.height)});
@@ -165,6 +165,8 @@ void PaperKeyboard::addKeysByVec(Point x1, Size ksize) {
         keysPositions = getKeysPositions(x1, ksize);
 
     for (const string &s : keysVec) {
+        if (s.empty())
+            continue;
         addKey(keysPositions[i][0], keysPositions[i][1], keysPositions[i][2], keysPositions[i][3], s);
         i++;
     }

@@ -1,3 +1,6 @@
+#include "string"
+#include "vector"
+
 #include <opencv2/opencv.hpp>
 
 #include "PaperKeyboard.h"
@@ -50,7 +53,7 @@ int main(int argc, char **argv)
     if (argc > 1)
         currentDir = argv[1];
 
-    VideoCapture cap(1);
+    VideoCapture cap(0);
     if (!cap.isOpened()) {
         cerr << "Unable to open video capture" << endl;
         return EXIT_FAILURE;
@@ -69,21 +72,23 @@ int main(int argc, char **argv)
          "q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "\n",
          "a", "s", "d", "f", "g", "h", "j", "k", "l", "\n",
          "z", "x", "c", "v", "b", "n", "m", "\n",
-         "space", "bkspace"};
-    pk.keysVec = vector<string>{
+         "_", "<-"};*/
+    /*pk.keysVec = vector<string>{
          "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "\n",
          "й", "ц", "у", "к", "е", "н", "г", "ш", "щ", "з", "х", "ъ", "\n",
          "ф", "ы", "в", "а", "п", "р", "о", "л", "д", "ж", "э", "\n",
-         "я", "ч", "с", "м", "и", "т", "ь", "б", "ю",
+         "я", "ч", "с", "м", "и", "т", "ь", "б", "ю", "\n",
+         "_", "<-"
     };*/
 
-    pk.keysVec = vector<string>{
-            "1", "2", "3", "4", "5", "6", "R", "G", "B"};
+
+//     pk.keysVec = vector<string>{
+//            "1", "2", "3", "4", "5", "6", "R", "G", "B"};
 
     pk.setOnclick(onClick);
-    pk.addKeysByVec(Point(0, 0), Size(30, 30));
+    pk.addKeysByVec(Point(0, 0), Size(45, 45));
 
-    pk.addKey(Point(50, 50), Point(150, 50), Point(50, 100), Point(150, 100), SLIDEBAR);
+//    pk.addKey(Point(50, 50), Point(150, 50), Point(50, 100), Point(150, 100), SLIDEBAR);
 
     Mat frame, img, mask, img2;
 
@@ -144,18 +149,26 @@ int main(int argc, char **argv)
                         destroyWindow(pk.adjScWName);
                     }
                     break;
-                case 'l': // load from file
+                case 'l': { // load from file
                     pk.keys.clear();
-                    if (pk.loadFromFile(currentDir + "keyboard.pkb") && !pk.keys.empty())
-                        cout << "Keyboard configuration loaded from file" << endl;
+                    string filename;
+                    cout << "Filename: " << flush;
+                    cin >> filename;
+                    if (pk.loadFromFile(currentDir + filename) && !pk.keys.empty())
+                        cout << "Keyboard configuration loaded from file " << currentDir + filename << endl;
                     else
                         cerr << "Keyboard configuration isn`t loaded from file" << endl;
+                }
                     break;
-                case 's': // save
-                    if (pk.save2file(currentDir + "keyboard.pkb", PKB_PRINT_TYPE_2))
-                        cout << "Keyboard configuration saved to file" << endl;
+                case 's': { // save
+                    string filename;
+                    cout << "Filename: " << flush;
+                    cin >> filename;
+                    if (pk.save2file(currentDir + filename, PKB_PRINT_TYPE_2))
+                        cout << "Keyboard configuration saved to file " << currentDir + filename << endl;
                     else
                         cerr << "Can`t save keyboard configuration to file" << endl;
+                }
                     break;
                 case 'c': // adjust scale
                     should_adjustScale = !should_adjustScale;

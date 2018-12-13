@@ -8,7 +8,7 @@ pkb_key_type getPKBKType(string str) {
         return BUTTON;
     else if (str == PKBK_TYPE_SLIDEBAR)
         return SLIDEBAR;
-    return NULL;
+    return BUTTON;
 }
 
 PKBKey::PKBKey(Point x1_, Point x2_, Point y1_, Point y2_, string text_) {
@@ -76,6 +76,7 @@ void PKBKey::draw(Mat &img, Scalar color, Size fontSize) {
     } else if (type == SLIDEBAR) {
         line(img, Point(x1.x + 5, x1.y + ((y1.y - x1.y) / 2)),
              Point(x2.x - 5, x2.y + ((y2.y - x2.y) / 2)), color, 2);
-        circle(img, Point(x1.x + 5 + (x2.x - x1.x) / 100 * val, x1.y + ((y1.y - x1.y) / 2)), 3, color, FILLED);
+        int v = (x2.x - x1.x) * val / 100;
+        circle(img, Point(x1.x + 5 + v, x1.y + ((y1.y - x1.y) / 2)), 3, color, FILLED);
     }
 }
