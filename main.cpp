@@ -10,6 +10,7 @@
 using namespace std;
 using namespace cv;
 using namespace LibSerial;
+using namespace PaperKeyboard;
 
 SerialStream serial;
 
@@ -39,7 +40,7 @@ void flipImg(const Mat &img, Mat &res) {
     flip(img, res, 1);
 }
 
-void onClick(const Point &p, PKBKey &k) {
+void onClick(const Point &p, Key &k) {
     cout << k.getVal(p) << endl;
     writeSerial(k.text);
 }
@@ -66,7 +67,7 @@ int main(int argc, char **argv)
         cout << "Serial port " << portDev << " opened successfully" << endl;
     }
 
-    PaperKeyboard pk;
+    PaperKeyboard::PaperKeyboard pk;
 
     /*pk.keysVec = vector<string>{
          "q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "\n",
@@ -164,7 +165,7 @@ int main(int argc, char **argv)
                     string filename;
                     cout << "Filename: " << flush;
                     cin >> filename;
-                    if (pk.save2file(currentDir + filename, PKB_PRINT_TYPE_2))
+                    if (pk.save2file(currentDir + filename))
                         cout << "Keyboard configuration saved to file " << currentDir + filename << endl;
                     else
                         cerr << "Can`t save keyboard configuration to file" << endl;
@@ -184,7 +185,7 @@ int main(int argc, char **argv)
                     break;
                 case 'p': {
                     Mat i(A4_SIZE, CV_8UC1, Scalar(255, 255, 255));
-                    pk.prepare4Print(i, PKB_PRINT_TYPE_4);
+                    pk.prepare4Print(i);
                     imshow("Print", i);
                 }
                     break;
