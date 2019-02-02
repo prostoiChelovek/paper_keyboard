@@ -19,43 +19,24 @@ Mat PaperKeyboard::detectHands(Mat img) {
     return mask;
 }
 
-void PaperKeyboard::setLast() {
-    lastFingers.clear();
-    for (Hand &h : hd.hands) {
-        vector<ShortFinger> fingers;
-        Finger f;
-        if (clrf == FARTHEST)
-            f = h.farthestFinger;
-        else if (clrf == HIGHER)
-            f = h.higherFinger;
-        if (clrf == ALL) {
-            for (const Finger &fng : h.fingers) {
-                fingers.emplace_back(ShortFinger{fng.ptStart, fng.ptEnd, fng.ptFar});
-            }
-        } else
-            fingers.emplace_back(ShortFinger{f.ptStart, f.ptEnd, f.ptFar});
-        lastFingers.emplace_back(fingers);
-    }
-}
-
 void PaperKeyboard::adjustColorRanges() {
     namedWindow(adjRngWName);
     auto onTrackbarActivity = [](int val, void *data) {
         double &vNum = *(static_cast<double *>(data));
         vNum = double(val);
     };
-    createTrackbar("CrMin", adjRngWName, nullptr, 255, onTrackbarActivity, &YCrCb_lower.val[0]);
-    createTrackbar("CrMax", adjRngWName, nullptr, 255, onTrackbarActivity, &YCrCb_upper.val[0]);
-    createTrackbar("CbMin", adjRngWName, nullptr, 255, onTrackbarActivity, &YCrCb_lower.val[1]);
-    createTrackbar("CbMax", adjRngWName, nullptr, 255, onTrackbarActivity, &YCrCb_upper.val[1]);
-    createTrackbar("YMin", adjRngWName, nullptr, 255, onTrackbarActivity, &YCrCb_lower.val[2]);
-    createTrackbar("YMax", adjRngWName, nullptr, 255, onTrackbarActivity, &YCrCb_upper.val[2]);
-    setTrackbarPos("CrMin", adjRngWName, int(YCrCb_lower.val[0]));
-    setTrackbarPos("CrMax", adjRngWName, int(YCrCb_upper.val[0]));
-    setTrackbarPos("CbMin", adjRngWName, int(YCrCb_lower.val[1]));
-    setTrackbarPos("CbMax", adjRngWName, int(YCrCb_upper.val[1]));
-    setTrackbarPos("YMin", adjRngWName, int(YCrCb_lower.val[2]));
-    setTrackbarPos("YMax", adjRngWName, int(YCrCb_upper.val[2]));
+    int CrMinVal = YCrCb_lower.val[0];
+    createTrackbar("CrMin", adjRngWName, &CrMinVal, 255, onTrackbarActivity, &YCrCb_lower.val[0]);
+    int CrMaxVal = YCrCb_upper.val[0];
+    createTrackbar("CrMax", adjRngWName, &CrMaxVal, 255, onTrackbarActivity, &YCrCb_upper.val[0]);
+    int CbMinVal = YCrCb_lower.val[1];
+    createTrackbar("CbMin", adjRngWName, &CbMinVal, 255, onTrackbarActivity, &YCrCb_lower.val[1]);
+    int CbMaxVal = YCrCb_upper.val[1];
+    createTrackbar("CbMax", adjRngWName, &CbMaxVal, 255, onTrackbarActivity, &YCrCb_upper.val[1]);
+    int YMinVal = YCrCb_lower.val[2];
+    createTrackbar("YMin", adjRngWName, &YMinVal, 255, onTrackbarActivity, &YCrCb_lower.val[2]);
+    int YMaxVal = YCrCb_upper.val[2];
+    createTrackbar("YMax", adjRngWName, &YMaxVal, 255, onTrackbarActivity, &YCrCb_upper.val[2]);
 }
 
 void PaperKeyboard::adjustKeyboardManually(Mat &img) {
@@ -208,29 +189,29 @@ void PaperKeyboard::callOnclick(const Point &p, PKBKey &k, bool runAsync) {
 }
 
 void PaperKeyboard::getClicks() {
-    if (lastFingers.empty())
+    if (hd.lastHands.empty())
         return;
 
-    for (int i = 0; i < hd.hands.size(); i++) {
-        for (int j = 0; j < hd.hands[i].fingers.size(); j++) {
+    for (Hand &h : hd.hands) {
+        ShortHand lastH = h.getSame(hd.lastHands);
+
+        for (int j = 0; j < h.fingers.size(); j++) {
             Finger cf;
             if (clrf == FARTHEST)
-                cf = hd.hands[i].farthestFinger;
+                cf = h.farthestFinger;
             else if (clrf == HIGHER)
-                cf = hd.hands[i].higherFinger;
+                cf = h.higherFinger;
             else if (clrf == ALL)
-                cf = hd.hands[i].fingers[j];
+                cf = h.fingers[j];
 
-            if (cf.ok) {
-                ShortFinger last = getSame(lastFingers[i], cf);
-                int diffDist = getDist(last.ptFar, last.ptStart) - getDist(cf.ptFar, cf.ptStart);
-                if (diffDist > minDistChange && diffDist < maxDistChange) {
-                    PKBKey k = getKeyByPoint(Point(cf.ptStart.x + 10, cf.ptStart.y));
-                    if (k.x1.x != -1) {
-                        if (time(nullptr) - lastClickTime >= clickDelay) {
-                            callOnclick(cf.ptStart, k);
-                            lastClickTime = time(nullptr);
-                        }
+            ShortFinger lastF = cf.getSame(lastH.fingers);
+            int diffDist = abs(getDist(lastF.ptFar, lastF.ptStart) - getDist(cf.ptFar, cf.ptStart));
+            if (diffDist > minDistChange && diffDist < maxDistChange) {
+                PKBKey k = getKeyByPoint(Point(cf.ptStart.x + 10, cf.ptStart.y));
+                if (k.x1.x != -1) {
+                    if (time(nullptr) - lastClickTime >= clickDelay) {
+                        callOnclick(cf.ptStart, k);
+                        lastClickTime = time(nullptr);
                     }
                 }
             }

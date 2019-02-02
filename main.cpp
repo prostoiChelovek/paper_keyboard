@@ -53,7 +53,7 @@ int main(int argc, char **argv)
     if (argc > 1)
         currentDir = argv[1];
 
-    VideoCapture cap(0);
+    VideoCapture cap(1);
     if (!cap.isOpened()) {
         cerr << "Unable to open video capture" << endl;
         return EXIT_FAILURE;
@@ -82,8 +82,8 @@ int main(int argc, char **argv)
     };*/
 
 
-//     pk.keysVec = vector<string>{
-//            "1", "2", "3", "4", "5", "6", "R", "G", "B"};
+    pk.keysVec = vector<string>{
+            "1", "2", "3", "4", "5", "6", "R", "G", "B"};
 
     pk.setOnclick(onClick);
     pk.addKeysByVec(Point(0, 0), Size(45, 45));
@@ -113,7 +113,7 @@ int main(int argc, char **argv)
         if (should_adjustScale)
             pk.adjustScale(img2);
 
-        pk.setLast();
+        pk.hd.updateLast();
 
         // handling keystrokes
         char key = waitKey(1);

@@ -57,8 +57,8 @@ public:
 
     time_t lastClickTime = time(nullptr);
     float clickDelay = 1; // seconds
-    int minDistChange = -5;
-    int maxDistChange = 10;
+    int minDistChange = 20;
+    int maxDistChange = 120;
 
     Click_rec_finger clrf = ALL;
 

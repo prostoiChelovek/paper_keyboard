@@ -17,21 +17,6 @@ double getAngle(Point p1, Point p2) {
     return atan2(p1.y - p2.y, p1.x - p2.x) * 180 / CV_PI;
 }
 
-ShortFinger getSame(const vector<ShortFinger> &fingers, const Finger &f) {
-    int minDist;
-    ShortFinger res;
-    for (const ShortFinger &fn : fingers) {
-        int crDist = getDist(fn.ptStart, f.ptStart) +
-                     getDist(fn.ptEnd, f.ptEnd) +
-                     getDist(fn.ptFar, f.ptFar);
-        if (crDist < minDist) {
-            minDist = crDist;
-            res = fn;
-        }
-    }
-    return res;
-}
-
 int safeStoi(string str) {
     try {
         return stoi(str);
