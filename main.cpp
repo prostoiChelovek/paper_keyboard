@@ -7,6 +7,12 @@
 
 #include <SerialStream.h>
 
+#define CVUI_IMPLEMENTATION
+
+#include "cvui.h"
+
+#define WINDOW_NAME "Settings"
+
 using namespace std;
 using namespace cv;
 using namespace LibSerial;
@@ -14,8 +20,7 @@ using namespace PaperKeyboard;
 
 SerialStream serial;
 
-bool openSerial(string port)
-{
+bool openSerial(string port) {
     serial.Open(move(port));
     serial.SetCharSize(SerialStreamBuf::CHAR_SIZE_8);
     serial.SetBaudRate(SerialStreamBuf::BaudRateEnum::BAUD_9600);
@@ -49,8 +54,7 @@ void onClick(const Point &p, Key &k) {
 bool should_adjustManually = false;
 bool should_adjustScale = false;
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     string currentDir = "/some/path/";
     if (argc > 1)
         currentDir = argv[1];
@@ -85,20 +89,23 @@ int main(int argc, char **argv)
 
 
     pk.keysVec = vector<string>{
-            "1", "2", "3", "4", "5", "6", "R", "G", "B"};
+            "a", "b", "c", "d", "e", "f", "R", "G", "B", "\n", "\n",
+            "%1%100"};
 
     pk.setOnclick(onClick);
     pk.addKeysByVec(Point(0, 0), Size(45, 45));
 
-    pk.addKey(Point(50, 50), Point(150, 50), Point(50, 100), Point(150, 100), SLIDEBAR);
+    namedWindow(WINDOW_NAME, CV_WINDOW_AUTOSIZE);
+    cvui::init(WINDOW_NAME);
 
     Mat frame, img, mask, img2;
 
     cap >> pk.bg;
     flipImg(pk.bg, pk.bg);
-    pk.adjustColorRanges();
-
+    int width = 200;
+    Mat settingsWin(600, width * 3 + 100, CV_8UC1);
     while (cap.isOpened()) {
+        char key = -1;
         cap >> frame;
         flipImg(frame, frame);
         frame.copyTo(img);
@@ -107,6 +114,89 @@ int main(int argc, char **argv)
         pk.getClicks();
 
         pk.draw(img);
+
+        settingsWin = Scalar(49, 52, 49);
+        cvui::beginColumn(settingsWin, 20, 20, width, -1, 6);
+
+        cvui::checkbox("Blur", &pk.hd.shouldBlur);
+        cvui::text("blur kernel size");
+        cvui::trackbar(width, &pk.hd.blurKsize.width, 1, 100);
+        cvui::space(5);
+
+        cvui::text("threshold sens val");
+        cvui::trackbar(width, &pk.hd.thresh_sens_val, 1, 100);
+        cvui::space(5);
+
+        cvui::text("Min distance change for click");
+        cvui::trackbar(width, &pk.minDistChange, 0, 100);
+        cvui::space(5);
+
+        cvui::text("Max distance change for click");
+        cvui::trackbar(width, &pk.maxDistChange, pk.minDistChange + 1, 200);
+        cvui::space(5);
+
+        cvui::text("Click delay");
+        cvui::trackbar(width, &pk.clickDelay, 0.1f, 5.f);
+        cvui::space(5);
+
+        cvui::text("Finger");
+        cvui::beginRow(settingsWin, 20, 450, width);
+        if (cvui::button("Farthest"))
+            pk.clrf = FARTHEST;
+        if (cvui::button("Higher"))
+            pk.clrf = HIGHER;
+        if (cvui::button("All"))
+            pk.clrf = ALL;
+        cvui::endRow();
+        cvui::space(5);
+
+        cvui::checkbox("Check size", &pk.hd.shouldCheckSize);
+        cvui::space(5);
+
+        cvui::checkbox("Check angles", &pk.hd.shouldCheckAngles);
+        cvui::space(5);
+        cvui::endColumn();
+
+        cvui::beginColumn(settingsWin, width + 50, 20, width, -1, 6);
+        cvui::text("CrMin");
+        cvui::trackbar(width, &pk.YCrCb_lower[0], 0., 255.);
+        cvui::text("CrMax");
+        cvui::trackbar(width, &pk.YCrCb_upper[0], 0., 255.);
+        cvui::space(5);
+        cvui::text("CbMin");
+        cvui::trackbar(width, &pk.YCrCb_lower[1], 0., 255.);
+        cvui::text("CbMax");
+        cvui::trackbar(width, &pk.YCrCb_upper[1], 0., 255.);
+        cvui::space(5);
+        cvui::text("YMin");
+        cvui::trackbar(width, &pk.YCrCb_lower[2], 0., 255.);
+        cvui::text("YMax");
+        cvui::trackbar(width, &pk.YCrCb_upper[2], 0., 255.);
+        cvui::space(5);
+        cvui::endColumn();
+
+        cvui::beginColumn(settingsWin, (width + 50) * 2, 20, width, -1, 6);
+        if (cvui::button("Exit"))
+            key = 'q';
+        if (cvui::button("Change background"))
+            key = 'b';
+        if (cvui::button("Adjust by QR"))
+            key = 'r';
+        if (cvui::button("Adjust manually"))
+            key = 'm';
+        if (cvui::button("Load from file"))
+            key = 'l';
+        if (cvui::button("Save to file"))
+            key = 's';
+        if (cvui::button("Adjust scale"))
+            key = 'c';
+        if (cvui::button("Print"))
+            key = 'p';
+        cvui::endColumn();
+
+        cvui::update();
+        cv::imshow(WINDOW_NAME, settingsWin);
+
         imshow("img", img);
         imshow("mask", mask);
 
@@ -118,7 +208,8 @@ int main(int argc, char **argv)
         pk.hd.updateLast();
 
         // handling keystrokes
-        char key = waitKey(1);
+        if (key == -1)
+            key = waitKey(1);
         if (key != -1) {
             switch (key) {
                 case 'q': // exit
@@ -184,7 +275,7 @@ int main(int argc, char **argv)
                         destroyWindow(pk.adjKbWName);
                     }
                     break;
-                case 'p': {
+                case 'p': { // print
                     Mat i(A4_SIZE, CV_8UC1, Scalar(255, 255, 255));
                     pk.prepare4Print(i);
                     imshow("Print", i);

@@ -47,26 +47,6 @@ namespace PaperKeyboard {
         return mask;
     }
 
-    void PaperKeyboard::adjustColorRanges() {
-        namedWindow(adjRngWName);
-        auto onTrackbarActivity = [](int val, void *data) {
-            double &vNum = *(static_cast<double *>(data));
-            vNum = double(val);
-        };
-        int CrMinVal = YCrCb_lower.val[0];
-        createTrackbar("CrMin", adjRngWName, &CrMinVal, 255, onTrackbarActivity, &YCrCb_lower.val[0]);
-        int CrMaxVal = YCrCb_upper.val[0];
-        createTrackbar("CrMax", adjRngWName, &CrMaxVal, 255, onTrackbarActivity, &YCrCb_upper.val[0]);
-        int CbMinVal = YCrCb_lower.val[1];
-        createTrackbar("CbMin", adjRngWName, &CbMinVal, 255, onTrackbarActivity, &YCrCb_lower.val[1]);
-        int CbMaxVal = YCrCb_upper.val[1];
-        createTrackbar("CbMax", adjRngWName, &CbMaxVal, 255, onTrackbarActivity, &YCrCb_upper.val[1]);
-        int YMinVal = YCrCb_lower.val[2];
-        createTrackbar("YMin", adjRngWName, &YMinVal, 255, onTrackbarActivity, &YCrCb_lower.val[2]);
-        int YMaxVal = YCrCb_upper.val[2];
-        createTrackbar("YMax", adjRngWName, &YMaxVal, 255, onTrackbarActivity, &YCrCb_upper.val[2]);
-    }
-
     void PaperKeyboard::adjustKeyboardManually(Mat &img) {
         if (keys.size() == keysVec.size())
             return;
@@ -150,9 +130,17 @@ namespace PaperKeyboard {
                 s.replace(fN, fN + 2, "");
                 continue;
             }
-            int aW = s.size() > 1 ? fontSize.width * (s.size() + 1) : 0;
-            Point X1(lX, x1.y + r != 1 ? ksize.height * r : 0);
-            Point X2(X1.x + ksize.width + aW, X1.y);
+            Point X1(lX, x1.y + r > 0 ? ksize.height * r : 0);
+            Point X2(X1.x, X1.y);
+            vector<string> splits;
+            if (split(s, splits, PKB_STR_TYPE_CHANGE) > 1) {
+                if (splits.size() > 2)
+                    X2.x += safeStoi(splits[2]);
+                else
+                    X2.x += ksize.width;
+            } else
+                X2.x += s.size() > 1 ? fontSize.width * (s.size() + 1) : 0 + ksize.width;
+
             res.emplace_back(vector<Point>{X1, X2, Point(X1.x, X1.y + ksize.height),
                                            Point(X2.x, X1.y + ksize.height)});
             i++;
@@ -169,7 +157,14 @@ namespace PaperKeyboard {
         for (const string &s : keysVec) {
             if (s.empty())
                 continue;
-            addKey(keysPositions[i][0], keysPositions[i][1], keysPositions[i][2], keysPositions[i][3], BUTTON, s);
+            KeyType type = BUTTON;
+            vector<string> splits;
+            if (split(s, splits, PKB_STR_TYPE_CHANGE) > 1) {
+                if (splits[1] == "1")
+                    type = SLIDEBAR;
+            }
+            addKey(keysPositions[i][0], keysPositions[i][1], keysPositions[i][2], keysPositions[i][3],
+                   type, splits.size() > 1 ? "0" : s);
             i++;
         }
     }
@@ -186,7 +181,7 @@ namespace PaperKeyboard {
         }
     }
 
-    Key * PaperKeyboard::getKeyByPoint(Point p) {
+    Key *PaperKeyboard::getKeyByPoint(Point p) {
         for (Key &k : keys) {
             if (k.x1.x < p.x && k.x2.x > p.x &&
                 k.x1.y < p.y && k.y1.y > p.y)
@@ -264,7 +259,6 @@ namespace PaperKeyboard {
         for (const Key &k : keys) {
             res += k.serealize2str() + "\n";
         }
-
         return res;
     }
 
