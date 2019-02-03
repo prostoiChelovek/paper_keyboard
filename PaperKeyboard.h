@@ -22,11 +22,13 @@ namespace PaperKeyboard {
 
 #define A4_SIZE Size(595, 842)
 #define GaugeLineLength 100 // px
-
 #define GL_KB_INDENT 10 // indent between gauge line and keyboard
+#define PKB_HEADER "%PKB%"
+#define ONCLICK_CALLBACK function<void(const Point &, Key &)>
 
 #define COLOR_WHITE Scalar(255, 255, 255)
 #define COLOR_BLACK Scalar(0, 0, 0)
+
 
     enum QRCodePos {
         NONE = 0,
@@ -46,8 +48,6 @@ namespace PaperKeyboard {
     };
 
 
-#define PKB_HEADER "%PKB%"
-
     enum Click_rec_finger { // finger from which recognizing pressing
         FARTHEST,
         HIGHER,
@@ -66,7 +66,7 @@ namespace PaperKeyboard {
         vector<vector<Point>> keysPositions;
         Size fontSize = Size(10, 10);
 
-        function<void(const Point &, Key &)> onClick;
+        ONCLICK_CALLBACK onClick;
         bool onClickSet = false;
 
         time_t lastClickTime = time(nullptr);
@@ -95,8 +95,6 @@ namespace PaperKeyboard {
 
         void adjustScale(Mat &img); // do not call together with adjustKeyboardManually
 
-        void addKey(Point x1, Point x2, Point y1, Point y2, string text);
-
         void addKey(Point x1, Point x2, Point y1, Point y2, KeyType type, string text = "");
 
         vector<vector<Point>> getKeysPositions(Point x1, Size ksize = Size(50, 50));
@@ -118,9 +116,9 @@ namespace PaperKeyboard {
         // set num as -1 to not use limitation
         void deleteKeysByText(string text, int num = 1);
 
-        Key getKeyByPoint(Point p);
+        Key * getKeyByPoint(Point p);
 
-        void setOnclick(function<void(const Point &, Key &)> f);
+        void setOnclick(ONCLICK_CALLBACK f);
 
         void callOnclick(const Point &p, Key &k, bool runAsync = false);
 

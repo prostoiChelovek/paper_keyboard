@@ -82,8 +82,7 @@ namespace PaperKeyboard {
         setMouseCallback(adjKbWName, mouseCallback, &tmpPoints);
         if (tmpPoints.size() == 4) {
             keysPositions.emplace_back(vector<Point>{tmpPoints[0], tmpPoints[1], tmpPoints[2], tmpPoints[3]});
-            addKey(tmpPoints[0], tmpPoints[1], tmpPoints[2], tmpPoints[3],
-                   keysVec[keys.size()]);
+            addKey(tmpPoints[0], tmpPoints[1], tmpPoints[2], tmpPoints[3], BUTTON, keysVec[keys.size()]);
             tmpPoints.clear();
         }
 
@@ -133,15 +132,9 @@ namespace PaperKeyboard {
         }
     }
 
-
-    void PaperKeyboard::addKey(Point x1, Point x2, Point y1, Point y2, string text) {
-        keys.emplace_back(x1, x2, y1, y2, text);
-    }
-
     void PaperKeyboard::addKey(Point x1, Point x2, Point y1, Point y2, KeyType type, string text) {
         keys.emplace_back(x1, x2, y1, y2, type, text);
     }
-
 
     vector<vector<Point>> PaperKeyboard::getKeysPositions(Point x1, Size ksize) {
         vector<vector<Point>> res;
@@ -176,7 +169,7 @@ namespace PaperKeyboard {
         for (const string &s : keysVec) {
             if (s.empty())
                 continue;
-            addKey(keysPositions[i][0], keysPositions[i][1], keysPositions[i][2], keysPositions[i][3], s);
+            addKey(keysPositions[i][0], keysPositions[i][1], keysPositions[i][2], keysPositions[i][3], BUTTON, s);
             i++;
         }
     }
@@ -186,20 +179,20 @@ namespace PaperKeyboard {
         for (int i = 0; i < keys.size(); i++) {
             if (num > 0 && n == num)
                 break;
-            if (keys[i].text == text) {
+            if (keys[i].getVal() == text) {
                 keys.erase(keys.begin() + i);
                 n++;
             }
         }
     }
 
-    Key PaperKeyboard::getKeyByPoint(Point p) {
-        for (Key k : keys) {
+    Key * PaperKeyboard::getKeyByPoint(Point p) {
+        for (Key &k : keys) {
             if (k.x1.x < p.x && k.x2.x > p.x &&
                 k.x1.y < p.y && k.y1.y > p.y)
-                return k;
+                return &k;
         }
-        return Key();
+        return nullptr;
     }
 
     void PaperKeyboard::setOnclick(function<void(const Point &, Key &)> f) {
@@ -235,10 +228,12 @@ namespace PaperKeyboard {
                 ShortFinger lastF = cf.getSame(lastH.fingers);
                 int diffDist = abs(getDist(lastF.ptFar, lastF.ptStart) - getDist(cf.ptFar, cf.ptStart));
                 if (diffDist > minDistChange && diffDist < maxDistChange) {
-                    Key k = getKeyByPoint(Point(cf.ptStart.x + 10, cf.ptStart.y));
-                    if (k.x1.x != -1) {
+                    Key *k = getKeyByPoint(Point(cf.ptStart.x + 10, cf.ptStart.y));
+                    if (k == nullptr)
+                        return;
+                    if (k->x1.x != -1) {
                         if (time(nullptr) - lastClickTime >= clickDelay) {
-                            callOnclick(cf.ptStart, k);
+                            callOnclick(cf.ptStart, *k);
                             lastClickTime = time(nullptr);
                         }
                     }

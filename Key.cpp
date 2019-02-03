@@ -13,46 +13,34 @@ namespace PaperKeyboard {
         return BUTTON;
     }
 
-    Key::Key(Point x1_, Point x2_, Point y1_, Point y2_, string text_) {
+    Key::Key(Point x1_, Point x2_, Point y1_, Point y2_, KeyType type_, string dfVal) {
         x1 = x1_;
         x2 = x2_;
         y1 = y1_;
         y2 = y2_;
-        text = move(text_);
-    }
-
-    Key::Key(Point x1_, Point x2_, Point y1_, Point y2_, KeyType type_, string text_) {
-        x1 = x1_;
-        x2 = x2_;
-        y1 = y1_;
-        y2 = y2_;
-        text = move(text_);
         type = type_;
-    }
-
-    float Key::getSliderVal(const Point p) {
-        if (type != SLIDEBAR) return -1;
-        if (p.x < x1.x || p.x > x2.x || p.y < x1.y || p.y > y2.y) return -1;
-
-        float len = x2.x - x1.x;
-        float dist = p.x - x1.x;
-        float res = dist / len * 100;
-        val = res;
-        return res;
+        if (type == SLIDEBAR && dfVal == "")
+            val = "0";
+        else
+            val = move(dfVal);
     }
 
     string Key::getVal(const Point p) {
-        if (type == SLIDEBAR)
-            return to_string(getSliderVal(p));
-        else if (type == BUTTON)
-            return text;
-        return "";
+        if (type == SLIDEBAR) {
+            if (p.x < x1.x || p.x > x2.x || p.y < x1.y || p.y > y2.y) return "";
+
+            float len = x2.x - x1.x;
+            float dist = p.x - x1.x;
+            int res = dist / len * 100;
+            val = to_string(res);
+        }
+        return val;
     }
 
     string Key::serealize2str() const {
         string res = type == BUTTON ? KEY_TYPE_BUTTON : KEY_TYPE_SLIDEBAR;
         res += " ";
-        if (type != SLIDEBAR) res += text + " ";
+        if (type != SLIDEBAR) res += val + " ";
         res += to_string(x1.x) + " ";
         res += to_string(x1.y) + " ";
         res += to_string(x2.x) + " ";
@@ -71,14 +59,14 @@ namespace PaperKeyboard {
         line(img, x1, y1, color);
         line(img, x2, y2, color);
         if (type == BUTTON) {
-            putText(img, text,
-                    Point((x1.x + x2.x) / 2 - fontSize.width * (text.size()),
+            putText(img, val,
+                    Point((x1.x + x2.x) / 2 - fontSize.width * val.size(),
                           (x1.y + y1.y) / 2 + fontSize.height),
                     FONT_HERSHEY_COMPLEX, 1, color);
         } else if (type == SLIDEBAR) {
             line(img, Point(x1.x + 5, x1.y + ((y1.y - x1.y) / 2)),
                  Point(x2.x - 5, x2.y + ((y2.y - x2.y) / 2)), color, 2);
-            int v = (x2.x - x1.x) * val / 100;
+            int v = (x2.x - x1.x) * stoi(val) / 100;
             circle(img, Point(x1.x + 5 + v, x1.y + ((y1.y - x1.y) / 2)), 3, color, FILLED);
         }
     }

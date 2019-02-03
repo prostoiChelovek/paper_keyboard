@@ -41,8 +41,9 @@ void flipImg(const Mat &img, Mat &res) {
 }
 
 void onClick(const Point &p, Key &k) {
-    cout << k.getVal(p) << endl;
-    writeSerial(k.text);
+    string val = k.getVal(p);
+    cout << val << endl;
+    writeSerial(val);
 }
 
 bool should_adjustManually = false;
@@ -54,7 +55,7 @@ int main(int argc, char **argv)
     if (argc > 1)
         currentDir = argv[1];
 
-    VideoCapture cap(1);
+    VideoCapture cap(0);
     if (!cap.isOpened()) {
         cerr << "Unable to open video capture" << endl;
         return EXIT_FAILURE;
@@ -89,7 +90,7 @@ int main(int argc, char **argv)
     pk.setOnclick(onClick);
     pk.addKeysByVec(Point(0, 0), Size(45, 45));
 
-//    pk.addKey(Point(50, 50), Point(150, 50), Point(50, 100), Point(150, 100), SLIDEBAR);
+    pk.addKey(Point(50, 50), Point(150, 50), Point(50, 100), Point(150, 100), SLIDEBAR);
 
     Mat frame, img, mask, img2;
 

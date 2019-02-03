@@ -24,18 +24,11 @@ namespace PaperKeyboard {
     public:
         Point x1 = Point(-1, -1);
         Point x2, y1, y2;
-        string text;
-        KeyType type = BUTTON;
-
-        int val = 0;
+        KeyType type;
 
         Key() = default;
 
-        Key(Point x1_, Point x2_, Point y1_, Point y2_, string text_);
-
-        Key(Point x1_, Point x2_, Point y1_, Point y2_, KeyType kType_, string text_ = "");
-
-        float getSliderVal(Point p);
+        Key(Point x1_, Point x2_, Point y1_, Point y2_, KeyType kType_ = BUTTON, string dfVal = "");
 
         string getVal(Point p = Point(0, 0));
 
@@ -43,6 +36,9 @@ namespace PaperKeyboard {
 
         void draw(Mat &img, Scalar color = Scalar(255, 0, 0),
                   Size fontSize = Size(10, 10));
+
+    private:
+        string val;
     };
 
 }
