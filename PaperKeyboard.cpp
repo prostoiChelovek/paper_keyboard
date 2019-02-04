@@ -10,15 +10,12 @@ namespace PaperKeyboard {
         if (splits.size() != 2)
             return;
 
-        if (splits[0] == "1")
-            gaugeLine = true;
-        else
-            gaugeLine = false;
+        gaugeLine = splits[0] == "1";
         qrCOdePos = QRCodePos(safeStoi(splits[1]));
     }
 
     string PrintType::serialize() {
-        string res = "";
+        string res;
         if (gaugeLine)
             res += "1 ";
         else
@@ -47,68 +44,11 @@ namespace PaperKeyboard {
         return mask;
     }
 
-    void PaperKeyboard::adjustKeyboardManually(Mat &img) {
-        if (keys.size() == keysVec.size())
-            return;
-
-        namedWindow(adjKbWName);
-
-        auto mouseCallback = [](int event, int x, int y, int, void *data) {
-            vector<Point> &tmpPoints = *(static_cast<vector<Point> *>(data));
-            if (event == CV_EVENT_LBUTTONDOWN) {
-                tmpPoints.emplace_back(x, y);
-            }
-        };
-        setMouseCallback(adjKbWName, mouseCallback, &tmpPoints);
-        if (tmpPoints.size() == 4) {
-            keysPositions.emplace_back(vector<Point>{tmpPoints[0], tmpPoints[1], tmpPoints[2], tmpPoints[3]});
-            addKey(tmpPoints[0], tmpPoints[1], tmpPoints[2], tmpPoints[3], BUTTON, keysVec[keys.size()]);
-            tmpPoints.clear();
-        }
-
-        putText(img, keys.size() != keysVec.size() ? keysVec[keys.size()] : "end", Point(10, 100),
-                FONT_HERSHEY_DUPLEX, 1, Scalar(0, 143, 143), 2);
-
-        for (const Point &p : tmpPoints) {
-            circle(img, p, 3, Scalar(0, 255, 0));
-        }
-        imshow(adjKbWName, img);
-
-        if (keys.size() == keysVec.size()) {
-            tmpPoints.clear();
-            destroyWindow(adjKbWName);
-        }
-    }
-
     void PaperKeyboard::adjustKeyboardByQR(Mat img) {
         vector<Decoded_QRCode> decoded;
         decodeQr(move(img), decoded);
         for (const Decoded_QRCode &q : decoded) {
             deserializeFromString(q.data, q.location[2]);
-        }
-    }
-
-    void PaperKeyboard::adjustScale(Mat &img) {
-        if (!scaleLine.empty())
-            return;
-        namedWindow(adjScWName);
-        auto mouseCallback = [](int event, int x, int y, int, void *data) {
-            vector<Point> &tmpPoints = *(static_cast<vector<Point> *>(data));
-            if (event == CV_EVENT_LBUTTONDOWN) {
-                tmpPoints.emplace_back(x, y);
-            }
-        };
-        setMouseCallback(adjScWName, mouseCallback, &tmpPoints);
-
-        for (const Point &p : tmpPoints) {
-            circle(img, p, 3, Scalar(255, 0, 0));
-        }
-        imshow(adjScWName, img);
-
-        if (tmpPoints.size() == 2) {
-            scaleLine.swap(tmpPoints);
-            destroyWindow(adjScWName);
-            tmpPoints.clear();
         }
     }
 
@@ -119,7 +59,7 @@ namespace PaperKeyboard {
     vector<vector<Point>> PaperKeyboard::getKeysPositions(Point x1, Size ksize) {
         vector<vector<Point>> res;
         int i = 1;
-        int r = 1;
+        int r = 0;
         int lX = x1.x;
         for (string &s : keysVec) {
             auto fN = s.find('\n');
@@ -198,9 +138,9 @@ namespace PaperKeyboard {
     void PaperKeyboard::callOnclick(const Point &p, Key &k, bool runAsync) {
         if (!onClickSet)
             return;
-//    if (runAsync)
-//        async(launch::async, onClick, p, k);
-//    else
+//        if (runAsync)
+//            async(launch::async, onClick, p, k);
+//       else
         onClick(p, k);
     }
 
@@ -324,33 +264,33 @@ namespace PaperKeyboard {
         resize(img, img, Size(A4_SIZE.height, A4_SIZE.width));
 
         Mat qr(190, 190, CV_8UC1, COLOR_WHITE);
-        if (printType.qrCOdePos != QRCodePos::NONE) {
+        if (printType.qrCOdePos != NONE) {
             encodeQr(qr, serialize2str());
-            if (printType.qrCOdePos == QRCodePos::BTM_RIGHT)
+            if (printType.qrCOdePos == BTM_RIGHT)
                 qr.copyTo(img(Rect(img.cols - qr.cols, img.rows - qr.rows, qr.cols, qr.rows)));
             else
                 qr.copyTo(img(Rect(0, 0, qr.cols, qr.rows)));
         }
 
-        Point glStPt(20, 20);
+        Point glStPt(GL_KB_INDENT, GL_KB_INDENT);
         if (printType.gaugeLine) {
-            if (printType.qrCOdePos == QRCodePos::TOP_LEFT) {
+            if (printType.qrCOdePos == TOP_LEFT) {
                 glStPt.x += qr.cols;
             }
             line(img, glStPt, Point(glStPt.x + GaugeLineLength, glStPt.y), COLOR_BLACK, 2);
         }
 
         Mat keysIm(img.rows, img.cols, CV_8UC1, COLOR_WHITE);
-        if (printType.qrCOdePos != QRCodePos::NONE)
+        if (printType.qrCOdePos != NONE)
             resize(keysIm, keysIm, Size(keysIm.cols - qr.cols, keysIm.rows - qr.rows));
-        else if (printType.gaugeLine && printType.qrCOdePos != QRCodePos::TOP_LEFT)
+        if (printType.gaugeLine && printType.qrCOdePos != TOP_LEFT)
             resize(keysIm, keysIm, Size(keysIm.cols - glStPt.x, keysIm.rows - glStPt.y - GL_KB_INDENT));
-        else
+        if (!printType.gaugeLine && printType.qrCOdePos != TOP_LEFT)
             resize(keysIm, keysIm, Size(keysIm.cols - GL_KB_INDENT, keysIm.rows - GL_KB_INDENT));
 
         drawKeys(keysIm, COLOR_BLACK);
 
-        if (printType.qrCOdePos == QRCodePos::TOP_LEFT)
+        if (printType.qrCOdePos == TOP_LEFT)
             keysIm.copyTo(img(Rect(qr.cols, qr.rows, keysIm.cols, keysIm.rows)));
         else if (printType.gaugeLine)
             keysIm.copyTo(img(Rect(glStPt.x, glStPt.y + GL_KB_INDENT, keysIm.cols, keysIm.rows)));
@@ -383,9 +323,5 @@ namespace PaperKeyboard {
                     (istreambuf_iterator<char>()));
         file.close();
         return deserializeFromString(data, startPoint);
-    }
-
-    void PaperKeyboard::clearTmpPoints() {
-        tmpPoints.clear();
     }
 }

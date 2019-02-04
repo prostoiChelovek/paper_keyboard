@@ -23,7 +23,7 @@ namespace PaperKeyboard {
 #define A4_SIZE Size(595, 842)
 #define GaugeLineLength 100 // px
 #define GL_KB_INDENT 10 // indent between gauge line and keyboard
-#define PKB_HEADER "%PKB%"
+#define PKB_HEADER "PKB"
 #define PKB_STR_TYPE_CHANGE '%'
 #define ONCLICK_CALLBACK function<void(const Point &, Key &)>
 
@@ -79,18 +79,11 @@ namespace PaperKeyboard {
         vector<Point> scaleLine;
         vector<string> keysVec;
 
-        String adjKbWName = "adjust keyboard";
-        String adjScWName = "adjust scale";
-
         PrintType printType = PrintType(true, QRCodePos::TOP_LEFT);
 
         PaperKeyboard();
 
         Mat detectHands(Mat img);
-
-        void adjustKeyboardManually(Mat &img);
-
-        void adjustScale(Mat &img); // do not call together with adjustKeyboardManually
 
         void addKey(Point x1, Point x2, Point y1, Point y2, KeyType type, string text = "");
 
@@ -125,10 +118,7 @@ namespace PaperKeyboard {
 
         void draw(Mat &img, Scalar color = Scalar(255, 0, 0));
 
-        void clearTmpPoints();
-
     private:
-        vector<Point> tmpPoints;
         bool onClickSet = false;
     };
 
