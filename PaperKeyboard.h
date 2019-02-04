@@ -25,6 +25,7 @@ namespace PaperKeyboard {
 #define GL_KB_INDENT 10 // indent between gauge line and keyboard
 #define PKB_HEADER "PKB"
 #define PKB_STR_TYPE_CHANGE '%'
+#define DATA_SEPARATOR '\n'
 #define ONCLICK_CALLBACK function<void(const Point &, Key &)>
 
 #define COLOR_WHITE Scalar(255, 255, 255)
@@ -79,7 +80,7 @@ namespace PaperKeyboard {
         vector<Point> scaleLine;
         vector<string> keysVec;
 
-        PrintType printType = PrintType(true, QRCodePos::TOP_LEFT);
+        PrintType printType = PrintType(false, QRCodePos::NONE);
 
         PaperKeyboard();
 
@@ -95,6 +96,7 @@ namespace PaperKeyboard {
 
         void prepare4Print(Mat &img);
 
+        string serializeKeys2str();
         string serialize2str();
 
         bool deserializeFromString(string str, Point startPoint = Point(0, 0));

@@ -188,23 +188,73 @@ namespace PaperKeyboard {
         hd.drawHands(img, color);
     }
 
+    string PaperKeyboard::serializeKeys2str() {
+        string res = "";
+
+        Point startPtX, startPtY;
+        Point endPtX, endPtY;
+        vector<vector<Point>> lines;
+        for (int i = 0; i < keys.size(); i++) {
+            Key &k = keys[i];
+            startPtX = k.x1;
+            startPtY = k.y1;
+            for (int j = i + 1; j < keys.size(); j++) {
+                Key &k2 = keys[j];
+                if (k2.x1.y != startPtX.y || k2.y1.y != startPtY.y) {
+                    endPtX = keys[j - 1].x2;
+                    endPtY = keys[j - 1].y2;
+                    i = j - 1;
+                    break;
+                }
+            }
+            if (i == keys.size() - 1) {
+                endPtX = k.x2;
+                endPtY = k.y2;
+            }
+            lines.emplace_back(vector<Point>{startPtX, startPtY, endPtX, endPtY});
+        }
+
+        int currentLine = 0;
+        for (Key &k : keys) {
+            res += k.type == BUTTON ? KEY_TYPE_BUTTON : KEY_TYPE_SLIDEBAR;
+            res += " ";
+            if (k.type != SLIDEBAR) res += k.getVal() + " "; else res += "0 ";
+            if (k.x1 == lines[currentLine][0] && k.y1 == lines[currentLine][1]) {
+                res += to_string(k.x1.x) + " ";
+                res += to_string(k.x1.y) + " ";
+                res += to_string(k.y1.x) + " ";
+                res += to_string(k.y1.y);
+                if (k.x2 == lines[currentLine][2] && k.y2 == lines[currentLine][3])
+                    res += " ";
+            }
+            if (k.x2 == lines[currentLine][2] && k.y2 == lines[currentLine][3]) {
+                res += to_string(k.x2.x) + " ";
+                res += to_string(k.x2.y) + " ";
+                res += to_string(k.y2.x) + " ";
+                res += to_string(k.y2.y);
+                currentLine++;
+            }
+            if (currentLine == lines.size())
+                break;
+            res += DATA_SEPARATOR;
+        }
+        return res;
+    }
+
     string PaperKeyboard::serialize2str() {
         string res;
-        res += string(PKB_HEADER) + "\n";
-        res += printType.serialize() + "\n";
-        res += to_string(GaugeLineLength) + "\n";
+        res += string(PKB_HEADER) + DATA_SEPARATOR;
+        res += printType.serialize() + DATA_SEPARATOR;
+        res += to_string(GaugeLineLength) + DATA_SEPARATOR;
         if (printType.gaugeLine && printType.qrCOdePos != QRCodePos::TOP_LEFT)
-            res += to_string(GL_KB_INDENT) + "\n";
-
-        for (const Key &k : keys) {
-            res += k.serealize2str() + "\n";
-        }
+            res += to_string(GL_KB_INDENT) + DATA_SEPARATOR;
+        res += serializeKeys2str();
         return res;
     }
 
     bool PaperKeyboard::deserializeFromString(string str, Point startPoint) {
         vector<string> splits;
-        split(str, splits, '\n');
+        split(str, splits, DATA_SEPARATOR);
         if (splits.size() < 3) return false;
         if (splits[0] != PKB_HEADER)
             return false;
@@ -224,38 +274,85 @@ namespace PaperKeyboard {
             angle = getAngle(scaleLine[1], scaleLine[0]);
             cout << scale << " " << angle << endl;
         }
+        Point startPtX(-1, -1), startPtY;
+        Point endPtX, endPtY;
+        vector<vector<Point>> lines;
+        vector<Size> keySizes;
+        int n = 1;
         for (auto sp = splits.begin() + keysStartLine; sp != splits.end(); ++sp) {
             vector<string> splits2;
             split(*sp, splits2, ' ');
-            if (splits2.size() < 9)
+            if (splits2.size() < 2)
                 break;
-            int cordsStart = 1;
-            if (splits2[0] == KEY_TYPE_BUTTON)
-                cordsStart++;
-            vector<int> cords;
-            for (int i = cordsStart; i < splits2.size(); i++) {
-                cords.emplace_back(safeStoi(splits2[i]));
+            if (startPtX.x != -1)
+                n++;
+            if (splits2.size() == 6) {
+                if (startPtX.x == -1) {
+                    startPtX.x = safeStoi(splits2[2]);
+                    startPtX.y = safeStoi(splits2[3]);
+                    startPtY.x = safeStoi(splits2[4]);
+                    startPtY.y = safeStoi(splits2[5]);
+                } else {
+                    endPtX.x = safeStoi(splits2[2]);
+                    endPtX.y = safeStoi(splits2[3]);
+                    endPtY.x = safeStoi(splits2[4]);
+                    endPtY.y = safeStoi(splits2[5]);
+                    lines.emplace_back(vector<Point>{startPtX, startPtY, endPtX, endPtY});
+                    keySizes.emplace_back(abs(endPtX.x - startPtX.x) / n,
+                                          abs(startPtY.y - startPtX.y));
+                    n = 1;
+                    startPtX.x = -1;
+                }
+            } else if (splits2.size() == 10) {
+                lines.emplace_back(vector<Point>{
+                        Point(safeStoi(splits2[2]), safeStoi(splits2[3])),
+                        Point(safeStoi(splits2[4]), safeStoi(splits2[5])),
+                        Point(safeStoi(splits2[6]), safeStoi(splits2[7])),
+                        Point(safeStoi(splits2[8]), safeStoi(splits2[9])),
+                });
+                keySizes.emplace_back(abs(safeStoi(splits2[6]) - safeStoi(splits2[2])),
+                                      abs(safeStoi(splits2[5]) - safeStoi(splits2[3])));
+                n = 1;
             }
-            for (int i = 0; i < cords.size(); i += 2) {
-                cords[i] /= scale;
-                cords[i + 1] /= scale;
+        }
+
+        int lineNum = -1;
+        int lastX = 0;
+        for (auto sp = splits.begin() + keysStartLine; sp != splits.end(); ++sp) {
+            vector<string> splits2;
+            split(*sp, splits2, ' ');
+            if (splits2.size() < 2)
+                break;
+            if (splits2.size() == 6 || lastX == lines[lineNum][3].x) {
+                lineNum++;
+                if (lineNum >= lines.size())
+                    break;
+                lastX = lines[lineNum][0].x;
+            }
+            vector<Point> cords = {
+                    Point(lastX, lines[lineNum][0].y),
+                    Point(lastX + keySizes[lineNum].width, lines[lineNum][0].y),
+                    Point(lastX, lines[lineNum][0].y + keySizes[lineNum].height),
+                    Point(lastX + keySizes[lineNum].width, lines[lineNum][0].y + keySizes[lineNum].height),
+            };
+            for (Point &p : cords) {
+                p.x /= scale;
+                p.y /= scale;
                 if (!printType.gaugeLine) {
-                    cords[i] += startPoint.x;
-                    cords[i + 1] += startPoint.y;
+                    p.x += startPoint.x;
+                    p.y += startPoint.y;
                 } else {
                     if (scaleLine.empty()) {
                         cerr << "Please pick out gauge line!" << endl;
                         return false;
                     }
-                    cords[i] += scaleLine[0].x;
-                    cords[i + 1] += scaleLine[1].y + indent;
+                    p.x += scaleLine[0].x;
+                    p.y += scaleLine[1].y + indent;
                 }
             }
             string text = splits2[0] == KEY_TYPE_BUTTON ? splits2[1] : "";
-            addKey(Point(cords[0], cords[1]),
-                   Point(cords[2], cords[3]),
-                   Point(cords[4], cords[5]),
-                   Point(cords[6], cords[7]), getKeyType(splits2[0]), text);
+            addKey(cords[0], cords[1], cords[2], cords[3], getKeyType(splits2[0]), text);
+            lastX = cords[1].x;
         }
         return true;
     }
