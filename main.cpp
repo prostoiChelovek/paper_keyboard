@@ -54,7 +54,7 @@ bool should_adjustScale = false;
 bool should_showPrint = false;
 
 int main(int argc, char **argv) {
-    string currentDir = "/some/path/";
+    string currentDir = "/home/prostoichelovek/projects/paper_keyboard/";
     if (argc > 1)
         currentDir = argv[1];
 

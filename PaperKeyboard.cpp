@@ -189,7 +189,7 @@ namespace PaperKeyboard {
     }
 
     string PaperKeyboard::serializeKeys2str() {
-        string res = "";
+        string res;
 
         Point startPtX, startPtY;
         Point endPtX, endPtY;
@@ -246,7 +246,7 @@ namespace PaperKeyboard {
         res += string(PKB_HEADER) + DATA_SEPARATOR;
         res += printType.serialize() + DATA_SEPARATOR;
         res += to_string(GaugeLineLength) + DATA_SEPARATOR;
-        if (printType.gaugeLine && printType.qrCOdePos != QRCodePos::TOP_LEFT)
+        if (printType.gaugeLine && printType.qrCOdePos != TOP_LEFT)
             res += to_string(GL_KB_INDENT) + DATA_SEPARATOR;
         res += serializeKeys2str();
         return res;
@@ -264,7 +264,7 @@ namespace PaperKeyboard {
         double scale = 1;
         double angle = 1;
         int indent = 0;
-        if (printType.gaugeLine && printType.qrCOdePos != QRCodePos::TOP_LEFT) {
+        if (printType.gaugeLine && printType.qrCOdePos != TOP_LEFT) {
             indent = safeStoi(splits[3]);
             keysStartLine++;
         }
@@ -286,17 +286,32 @@ namespace PaperKeyboard {
                 break;
             if (startPtX.x != -1)
                 n++;
+            vector<int> cords1;
+            if (splits2.size() == 6 || splits2.size() == 10) {
+                Point &stPt = startPoint;
+                if (printType.gaugeLine) {
+                    if (scaleLine.empty()) {
+                        cerr << "Please pick out gauge line!" << endl;
+                        return false;
+                    }
+                    stPt = scaleLine[0];
+                }
+                for (int i = 2; i < splits2.size(); i += 2) {
+                    cords1.emplace_back(safeStoi(splits2[i]) / scale + stPt.x);
+                    cords1.emplace_back(safeStoi(splits2[i + 1]) / scale + stPt.y + indent);
+                }
+            }
             if (splits2.size() == 6) {
                 if (startPtX.x == -1) {
-                    startPtX.x = safeStoi(splits2[2]);
-                    startPtX.y = safeStoi(splits2[3]);
-                    startPtY.x = safeStoi(splits2[4]);
-                    startPtY.y = safeStoi(splits2[5]);
+                    startPtX.x = cords1[0];
+                    startPtX.y = cords1[1];
+                    startPtY.x = cords1[2];
+                    startPtY.y = cords1[3];
                 } else {
-                    endPtX.x = safeStoi(splits2[2]);
-                    endPtX.y = safeStoi(splits2[3]);
-                    endPtY.x = safeStoi(splits2[4]);
-                    endPtY.y = safeStoi(splits2[5]);
+                    endPtX.x = cords1[0];
+                    endPtX.y = cords1[1];
+                    endPtY.x = cords1[2];
+                    endPtY.y = cords1[3];
                     lines.emplace_back(vector<Point>{startPtX, startPtY, endPtX, endPtY});
                     keySizes.emplace_back(abs(endPtX.x - startPtX.x) / n,
                                           abs(startPtY.y - startPtX.y));
@@ -305,54 +320,45 @@ namespace PaperKeyboard {
                 }
             } else if (splits2.size() == 10) {
                 lines.emplace_back(vector<Point>{
-                        Point(safeStoi(splits2[2]), safeStoi(splits2[3])),
-                        Point(safeStoi(splits2[4]), safeStoi(splits2[5])),
-                        Point(safeStoi(splits2[6]), safeStoi(splits2[7])),
-                        Point(safeStoi(splits2[8]), safeStoi(splits2[9])),
+                        Point(cords1[0], cords1[1]),
+                        Point(cords1[2], cords1[3]),
+                        Point(cords1[4], cords1[5]),
+                        Point(cords1[6], cords1[7]),
                 });
-                keySizes.emplace_back(abs(safeStoi(splits2[6]) - safeStoi(splits2[2])),
-                                      abs(safeStoi(splits2[5]) - safeStoi(splits2[3])));
+                keySizes.emplace_back(abs(cords1[4] - cords1[0]),
+                                      abs(cords1[3] - cords1[1]));
                 n = 1;
             }
         }
+        if (lines.empty())
+            return false;
 
-        int lineNum = -1;
-        int lastX = 0;
+        int lineNum = 0;
+        int lastX = lines[lineNum][0].x;
+        bool started = false;
         for (auto sp = splits.begin() + keysStartLine; sp != splits.end(); ++sp) {
             vector<string> splits2;
             split(*sp, splits2, ' ');
             if (splits2.size() < 2)
                 break;
-            if (splits2.size() == 6 || lastX == lines[lineNum][3].x) {
-                lineNum++;
-                if (lineNum >= lines.size())
-                    break;
-                lastX = lines[lineNum][0].x;
-            }
+            if (splits2.size() == 6)
+                started = !started;
             vector<Point> cords = {
                     Point(lastX, lines[lineNum][0].y),
                     Point(lastX + keySizes[lineNum].width, lines[lineNum][0].y),
                     Point(lastX, lines[lineNum][0].y + keySizes[lineNum].height),
                     Point(lastX + keySizes[lineNum].width, lines[lineNum][0].y + keySizes[lineNum].height),
             };
-            for (Point &p : cords) {
-                p.x /= scale;
-                p.y /= scale;
-                if (!printType.gaugeLine) {
-                    p.x += startPoint.x;
-                    p.y += startPoint.y;
-                } else {
-                    if (scaleLine.empty()) {
-                        cerr << "Please pick out gauge line!" << endl;
-                        return false;
-                    }
-                    p.x += scaleLine[0].x;
-                    p.y += scaleLine[1].y + indent;
-                }
-            }
-            string text = splits2[0] == KEY_TYPE_BUTTON ? splits2[1] : "";
+            string text = splits2[0] == KEY_TYPE_BUTTON ? splits2[1] : "0";
             addKey(cords[0], cords[1], cords[2], cords[3], getKeyType(splits2[0]), text);
             lastX = cords[1].x;
+            if ((splits2.size() == 6 && !started)
+                || lastX == lines[lineNum][3].x) {
+                lineNum++;
+                if (lineNum >= lines.size())
+                    break;
+                lastX = lines[lineNum][0].x;
+            }
         }
         return true;
     }
