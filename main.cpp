@@ -5,53 +5,28 @@
 
 #include "PaperKeyboard.h"
 
-#include <SerialStream.h>
-
 #include "GUI.hpp"
 #define CVUI_IMPLEMENTATION
 #include "cvui.h"
 
+#include "SystemInteraction.hpp"
+
 using namespace std;
 using namespace cv;
-using namespace LibSerial;
 using namespace PaperKeyboard;
-
-SerialStream serial;
-
-bool openSerial(string port) {
-    serial.Open(move(port));
-    serial.SetCharSize(SerialStreamBuf::CHAR_SIZE_8);
-    serial.SetBaudRate(SerialStreamBuf::BaudRateEnum::BAUD_9600);
-    serial.SetNumOfStopBits(1);
-    serial.SetFlowControl(SerialStreamBuf::FLOW_CONTROL_NONE);
-    return serial.good();
-}
-
-bool writeSerial(const string &str) {
-    if (serial.good()) {
-        usleep(5000);
-    } else {
-        return false;
-    }
-    serial << str;
-    usleep(100000);
-    return true;
-}
-
-void flipImg(const Mat &img, Mat &res) {
-    flip(img, res, 0);
-    flip(img, res, 1);
-}
 
 void onClick(const Point &p, Key &k) {
     string val = k.getVal(p);
     cout << val << endl;
-    writeSerial(val);
+    SysInter::writeSerial(val);
+    SysInter::sendString(val);
 }
 
 bool should_adjustManually = false;
 bool should_adjustScale = false;
 bool should_showPrint = false;
+bool should_flipHor = true;
+bool should_flipVert = true;
 
 int main(int argc, char **argv) {
     string currentDir = "/home/prostoichelovek/projects/paper_keyboard/";
@@ -65,11 +40,13 @@ int main(int argc, char **argv) {
     }
 
     string portDev = "/dev/ttyUSB0";
-    if (!openSerial(portDev)) {
+    if (!SysInter::openSerial(portDev)) {
         cerr << "Unable to open serial port " << portDev << endl;
     } else {
         cout << "Serial port " << portDev << " opened successfully" << endl;
     }
+
+    SysInter::init();
 
     PaperKeyboard::PaperKeyboard pk;
 
@@ -110,11 +87,19 @@ int main(int argc, char **argv) {
     Mat frame, img, mask, img2;
 
     cap >> pk.bg;
-    flipImg(pk.bg, pk.bg);
+    if (should_flipHor)
+        flip(pk.bg, pk.bg, 0);
+    if (should_flipVert)
+        flip(pk.bg, pk.bg, 1);
+
     while (cap.isOpened()) {
         char key = -1;
         cap >> frame;
-        flipImg(frame, frame);
+        if (should_flipHor)
+            flip(frame, frame, 0);
+        if (should_flipVert)
+            flip(frame, frame, 1);
+
         frame.copyTo(img);
         frame.copyTo(img2);
         mask = pk.detectHands(img);
@@ -149,8 +134,7 @@ int main(int argc, char **argv) {
                     cout << "exit" << endl;
                     return EXIT_SUCCESS;
                 case 'b': // change bg
-                    cap >> pk.bg;
-                    flipImg(pk.bg, pk.bg);
+                    frame.copyTo(pk.bg);
                     cout << "Background changed." << endl;
                     break;
                 case 'r': // adjust keyboard by QR
@@ -201,6 +185,12 @@ int main(int argc, char **argv) {
                         destroyWindow(GUI::printKbWName);
                     else
                         cvui::watch(GUI::printKbWName);
+                    break;
+                case 'h':
+                    should_flipHor = !should_flipHor;
+                    break;
+                case 'v':
+                    should_flipVert = !should_flipVert;
                     break;
                 default:
                     cout << "Key pressed: " << key << endl;

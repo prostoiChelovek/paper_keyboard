@@ -101,29 +101,35 @@ namespace PaperKeyboard {
             cvui::endColumn();
 
             cvui::beginColumn(settingsWin, (width + 50) * 2, 20, width, -1, 6);
-            if (cvui::button("Exit"))
+            if (cvui::button("Exit (q)"))
                 key = 'q';
             cvui::space(2);
-            if (cvui::button("Change background"))
+            if (cvui::button("Change background (b)"))
                 key = 'b';
             cvui::space(2);
-            if (cvui::button("Adjust by QR"))
+            if (cvui::button("Adjust by QR (r)"))
                 key = 'r';
             cvui::space(2);
-            if (cvui::button("Adjust manually"))
+            if (cvui::button("Adjust manually (m)"))
                 key = 'm';
             cvui::space(2);
-            if (cvui::button("Load from file"))
+            if (cvui::button("Load from file (l)"))
                 key = 'l';
             cvui::space(2);
-            if (cvui::button("Save to file"))
+            if (cvui::button("Save to file (s)"))
                 key = 's';
             cvui::space(2);
-            if (cvui::button("Adjust scale"))
+            if (cvui::button("Adjust scale (c)"))
                 key = 'c';
             cvui::space(2);
-            if (cvui::button("Print"))
+            if (cvui::button("Print (p)"))
                 key = 'p';
+            cvui::space(2);
+            if (cvui::button("Flip horizontally (h)"))
+                key = 'h';
+            cvui::space(2);
+            if (cvui::button("Flip vertically (v)"))
+                key = 'v';
             cvui::endColumn();
             cvui::update();
             cv::imshow(settingsWName, settingsWin);
