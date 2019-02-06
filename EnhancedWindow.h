@@ -20,7 +20,6 @@ Code licensed under the MIT license.
 
 class EnhancedWindow {
 private:
-    int mHeightNotMinimized;
     cv::String mTitle;
     int mDeltaY;
     int mDeltaX;
@@ -33,6 +32,7 @@ public:
     int mY;
     int mWidth;
     int mHeight;
+    int mHeightNotMinimized;
 
     EnhancedWindow(int x, int y, int width, int height, const cv::String &title, bool minimizable = true) :
             mX(x),

@@ -27,7 +27,7 @@ namespace PaperKeyboard {
         int width = 200;
         Mat settingsWin(600, width * 3 + 100, CV_8UC1);
         EnhancedWindow printSettings(20, 80, 110, 150, "Settings");
-        EnhancedWindow adjustKeyboardWin(20, 80, 150, 200, "Select key");
+        EnhancedWindow adjustKeyboardWin(20, 80, 150, 125, "Select key");
         int currentKey = 0;
         vector<Point> tmpPoints;
         vector<Point> tmpPoints2;
@@ -154,6 +154,10 @@ namespace PaperKeyboard {
             imshow(printKbWName, i);
         }
 
+        bool editing = false;
+        bool rAngles = false;
+        int keyWidth = 0;
+        int keyHeight = 0;
         void displayAdjustManuallyGUI(PaperKeyboard &pk, vector<string> &keysVec, Mat &img) {
             if (pk.keys.size() < keysVec.size())
                 pk.keys.resize(keysVec.size());
@@ -169,14 +173,17 @@ namespace PaperKeyboard {
             int inRow = 0;
             int rowLength = 3;
             int i = 0;
+            int rowsNum = 1;
             for (string &s : keysVec) {
-                if (inRow == 0)
+                if (inRow == 0) {
                     cvui::beginRow();
+                    rowsNum++;
+                }
                 if (cvui::button(s)) {
                     currentKey = i;
                 }
                 inRow++;
-                if (inRow >= rowLength) {
+                if (inRow >= rowLength || s.size() > 2) {
                     cvui::endRow();
                     inRow = 0;
                 }
@@ -184,7 +191,8 @@ namespace PaperKeyboard {
             }
             if (inRow != 0)
                 cvui::endRow();
-            cvui::space();
+            cvui::space(2);
+            adjustKeyboardWin.mHeightNotMinimized = 125 + (25 * rowsNum);
             string crnKeyS = keysVec[currentKey];
             vector<string> splits;
             if (split(keysVec[currentKey], splits, PKB_STR_TYPE_CHANGE) > 1) {
@@ -192,9 +200,60 @@ namespace PaperKeyboard {
                     crnKeyS = "slidebar";
             }
             cvui::text("Current: " + crnKeyS);
+            cvui::space(6);
+            string keyText;
+            int keyType = 0;
+            cvui::checkbox("Right angles", &rAngles);
+            cvui::space(2);
+            if (cvui::button("Add")) {
+                cout << "Text: " << flush;
+                cin >> keyText;
+                cout << endl;
+                cout << "Type(0,1): " << flush;
+                cin >> keyType;
+                cout << endl;
+                if (rAngles) {
+                    cout << "Width: " << flush;
+                    cin >> keyWidth;
+                    cout << endl;
+                    cout << "Height: " << flush;
+                    cin >> keyHeight;
+                    cout << endl;
+                }
+                if (keyType == SLIDEBAR)
+                    keyText = PKB_STR_TYPE_CHANGE + to_string(keyType) + PKB_STR_TYPE_CHANGE + keyText;
+                keysVec.emplace_back(keyText);
+                currentKey = keysVec.size() - 1;
+                tmpPoints.clear();
+                editing = true;
+                if (rAngles)
+                    cout << "Select first point of the key" << endl;
+                else
+                    cout << "Select key points" << endl;
+            }
+            if (cvui::button("Edit")) {
+                tmpPoints.clear();
+                if (rAngles) {
+                    cout << "Width: " << flush;
+                    cin >> keyWidth;
+                    cout << endl;
+                    cout << "Height: " << flush;
+                    cin >> keyHeight;
+                    cout << endl;
+                    editing = true;
+                    cout << "Select first point of the key" << endl;
+                }
+            }
             adjustKeyboardWin.end();
             cvui::update(adjKbWName);
-            if (tmpPoints.size() == 4) {
+            if (tmpPoints.size() == 4
+                || (tmpPoints.size() == 1 && rAngles && editing)) {
+                if (rAngles && editing) {
+                    Point fP = tmpPoints[0];
+                    tmpPoints.emplace_back(fP.x + keyWidth, fP.y);
+                    tmpPoints.emplace_back(fP.x, fP.y + keyHeight);
+                    tmpPoints.emplace_back(fP.x + keyWidth, fP.y + keyHeight);
+                }
                 pk.keysPositions.emplace_back(vector<Point>{tmpPoints[0], tmpPoints[1], tmpPoints[2], tmpPoints[3]});
                 KeyType type = BUTTON;
                 vector<string> splits;
@@ -208,6 +267,12 @@ namespace PaperKeyboard {
                     selectedKeys.emplace_back(currentKey);
                 }
                 tmpPoints.clear();
+                if (rAngles && editing) {
+                    keyWidth = 0;
+                    keyHeight = 0;
+                    rAngles = false;
+                    editing = true;
+                }
             }
             if (find(selectedKeys.begin(), selectedKeys.end(), currentKey) != selectedKeys.end()) {
                 pk.keys[currentKey].draw(img, Scalar(0, 255, 255));
