@@ -3,6 +3,7 @@
 
 #include <opencv2/opencv.hpp>
 
+#include <string>
 #include "utils.h"
 
 using namespace std;
@@ -25,6 +26,8 @@ namespace PaperKeyboard {
         Point x1 = Point(-1, -1);
         Point x2, y1, y2;
         KeyType type;
+
+        string onClickCmd;
 
         Key() = default;
 

@@ -26,6 +26,7 @@ namespace PaperKeyboard {
 #define PKB_HEADER "PKB"
 #define PKB_STR_TYPE_CHANGE '%'
 #define DATA_SEPARATOR '\n'
+#define CMD_START_SYM "$"
 #define ONCLICK_CALLBACK function<void(const Point &, Key &)>
 
 #define COLOR_WHITE Scalar(255, 255, 255)
@@ -99,7 +100,7 @@ namespace PaperKeyboard {
         string serializeKeys2str();
         string serialize2str();
 
-        bool deserializeFromString(string str, Point startPoint = Point(0, 0));
+        bool praseString(string str, Point startPoint = Point(0, 0));
 
         bool loadFromFile(string filePath, Point startPoint = Point(0, 0));
 

@@ -5,6 +5,8 @@
 #ifndef PAPERKEYBOARD_SYSTEMINTERACTION_HPP
 #define PAPERKEYBOARD_SYSTEMINTERACTION_HPP
 
+#include <unistd.h>
+
 #if defined(unix) || defined(__unix__) || defined(__unix)
 #define OS_UNIX
 
@@ -20,7 +22,6 @@ namespace SysInter {
 #include <X11/Xlib.h>
 #include <X11/Intrinsic.h>
 #include <X11/extensions/XTest.h>
-#include <unistd.h>
 
     Display *disp;
 
@@ -65,7 +66,7 @@ namespace SysInter {
     LibSerial::SerialStream serial;
 
     bool openSerial(string port) {
-        serial.Open(move(port));
+        serial.Open(port);
         serial.SetCharSize(LibSerial::SerialStreamBuf::CHAR_SIZE_8);
         serial.SetBaudRate(LibSerial::SerialStreamBuf::BaudRateEnum::BAUD_9600);
         serial.SetNumOfStopBits(1);

@@ -20,6 +20,10 @@ void onClick(const Point &p, Key &k) {
     cout << val << endl;
     SysInter::writeSerial(val);
     SysInter::sendString(val);
+    if (!k.onClickCmd.empty()) {
+        system((k.onClickCmd + " &").c_str());
+        cout << k.onClickCmd << endl;
+    }
 }
 
 bool should_adjustManually = false;
@@ -27,6 +31,14 @@ bool should_adjustScale = false;
 bool should_showPrint = false;
 bool should_flipHor = true;
 bool should_flipVert = true;
+
+
+void flipImg(Mat &img) {
+    if (should_flipHor)
+        flip(img, img, 0);
+    if (should_flipVert)
+        flip(img, img, 1);
+}
 
 int main(int argc, char **argv) {
     string currentDir = "/home/prostoichelovek/projects/paper_keyboard/";
@@ -87,21 +99,14 @@ int main(int argc, char **argv) {
     Mat frame, img, mask, img2;
 
     cap >> pk.bg;
-    if (should_flipHor)
-        flip(pk.bg, pk.bg, 0);
-    if (should_flipVert)
-        flip(pk.bg, pk.bg, 1);
-
+    flipImg(pk.bg);
     while (cap.isOpened()) {
         char key = -1;
         cap >> frame;
-        if (should_flipHor)
-            flip(frame, frame, 0);
-        if (should_flipVert)
-            flip(frame, frame, 1);
-
+        flipImg(frame);
         frame.copyTo(img);
         frame.copyTo(img2);
+
         mask = pk.detectHands(img);
         pk.getClicks();
 

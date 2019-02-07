@@ -48,7 +48,7 @@ namespace PaperKeyboard {
         vector<Decoded_QRCode> decoded;
         decodeQr(move(img), decoded);
         for (const Decoded_QRCode &q : decoded) {
-            deserializeFromString(q.data, q.location[2]);
+            praseString(q.data, q.location[2]);
         }
     }
 
@@ -252,7 +252,7 @@ namespace PaperKeyboard {
         return res;
     }
 
-    bool PaperKeyboard::deserializeFromString(string str, Point startPoint) {
+    bool PaperKeyboard::praseString(string str, Point startPoint) {
         vector<string> splits;
         split(str, splits, DATA_SEPARATOR);
         if (splits.size() < 3) return false;
@@ -336,11 +336,20 @@ namespace PaperKeyboard {
         int lineNum = 0;
         int lastX = lines[lineNum][0].x;
         bool started = false;
+        n = 0;
         for (auto sp = splits.begin() + keysStartLine; sp != splits.end(); ++sp) {
             vector<string> splits2;
             split(*sp, splits2, ' ');
             if (splits2.size() < 2)
                 break;
+            if (splits2[0] == CMD_START_SYM && n != 0) {
+                string cmd;
+                for (int i = 1; i < splits2.size(); i++) {
+                    cmd += splits2[i] + " ";
+                }
+                keys[n - 1].onClickCmd = cmd;
+                continue;
+            }
             if (splits2.size() == 6)
                 started = !started;
             vector<Point> cords = {
@@ -351,6 +360,7 @@ namespace PaperKeyboard {
             };
             string text = splits2[0] == KEY_TYPE_BUTTON ? splits2[1] : "0";
             addKey(cords[0], cords[1], cords[2], cords[3], getKeyType(splits2[0]), text);
+            n++;
             lastX = cords[1].x;
             if ((splits2.size() == 6 && !started)
                 || lastX == lines[lineNum][3].x) {
@@ -425,6 +435,6 @@ namespace PaperKeyboard {
         string data((istreambuf_iterator<char>(file)),
                     (istreambuf_iterator<char>()));
         file.close();
-        return deserializeFromString(data, startPoint);
+        return praseString(data, startPoint);
     }
 }
