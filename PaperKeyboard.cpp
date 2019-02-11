@@ -27,11 +27,14 @@ namespace PaperKeyboard {
 
     PaperKeyboard::PaperKeyboard() {
         hd = HandDetector();
+        bgs = createBackgroundSubtractorMOG2();
+        bgs->setShadowValue(0);
+        bgs->setShadowThreshold(0.01);
     }
 
     Mat PaperKeyboard::detectHands(Mat img) {
         Mat imgYCrCb, mask;
-        hd.deleteBg(img, bg, img);
+        deleteBg(img, img, bgs, bgs_learn, 127);
 
         cvtColor(img, imgYCrCb, COLOR_BGR2YCrCb);
         mask = hd.detectHands_range(imgYCrCb, YCrCb_lower, YCrCb_upper);
@@ -42,6 +45,15 @@ namespace PaperKeyboard {
         hd.getFarthestFingers();
 
         return mask;
+    }
+
+    void PaperKeyboard::updateBG() {
+        if (bgs_learnNFrames > 0)
+            bgs_learnNFrames--;
+        else if (bgs_learn) {
+            bgs_learn = false;
+            cout << "Background learned" << endl;
+        }
     }
 
     void PaperKeyboard::adjustKeyboardByQR(Mat img) {

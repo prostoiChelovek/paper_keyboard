@@ -19,7 +19,7 @@ void decodeQr(const Mat img, vector<Decoded_QRCode> &decodedObjects) {
     Image image(img.cols, img.rows, "Y800", imGray.data, img.cols * img.rows);
 
     // Scan the image for barcodes and QRCodes
-    int n = scanner.scan(image);
+    scanner.scan(image);
 
     // Print results
     for (Image::SymbolIterator symbol = image.symbol_begin(); symbol != image.symbol_end(); ++symbol) {

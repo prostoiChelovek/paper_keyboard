@@ -59,8 +59,6 @@ namespace PaperKeyboard {
 
     class PaperKeyboard {
     public:
-        Mat bg;
-
         HandDetector hd;
         Scalar YCrCb_lower = Scalar(0, 135, 90);
         Scalar YCrCb_upper = Scalar(255, 230, 150);
@@ -78,6 +76,10 @@ namespace PaperKeyboard {
 
         Click_rec_finger clrf = ALL;
 
+        Ptr<BackgroundSubtractorMOG2> bgs;
+        bool bgs_learn = true;
+        int bgs_learnNFrames = 100;
+
         vector<Point> scaleLine;
         vector<string> keysVec;
 
@@ -86,6 +88,8 @@ namespace PaperKeyboard {
         PaperKeyboard();
 
         Mat detectHands(Mat img);
+
+        void updateBG();
 
         void addKey(Point x1, Point x2, Point y1, Point y2, KeyType type, string text = "");
 

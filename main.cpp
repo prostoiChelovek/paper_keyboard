@@ -98,8 +98,6 @@ int main(int argc, char **argv) {
 
     Mat frame, img, mask, img2;
 
-    cap >> pk.bg;
-    flipImg(pk.bg);
     while (cap.isOpened()) {
         char key = -1;
         cap >> frame;
@@ -130,6 +128,8 @@ int main(int argc, char **argv) {
 
         pk.hd.updateLast();
 
+        pk.updateBG();
+
         // handling keystrokes
         if (key == -1)
             key = waitKey(1);
@@ -139,8 +139,9 @@ int main(int argc, char **argv) {
                     cout << "exit" << endl;
                     return EXIT_SUCCESS;
                 case 'b': // change bg
-                    frame.copyTo(pk.bg);
-                    cout << "Background changed." << endl;
+                    pk.bgs_learnNFrames = 100;
+                    pk.bgs_learn = true;
+                    cout << "Starting learning background." << endl;
                     break;
                 case 'r': // adjust keyboard by QR
                     pk.keys.clear();
