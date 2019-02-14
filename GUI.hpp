@@ -25,7 +25,7 @@ namespace PaperKeyboard {
         String printKbWName = "Print";
         String settingsWName = "Settings";
         int width = 200;
-        Mat settingsWin(600, width * 3 + 100, CV_8UC1);
+        Mat settingsWin(660, width * 3 + 100, CV_8UC1);
         EnhancedWindow printSettings(20, 80, 110, 150, "Settings");
         EnhancedWindow adjustKeyboardWin(20, 80, 150, 125, "Select key");
         int currentKey = 0;
@@ -43,7 +43,6 @@ namespace PaperKeyboard {
             settingsWin = Scalar(49, 52, 49);
             cvui::beginColumn(settingsWin, 20, 20, width, -1, 6);
 
-            cvui::checkbox("Blur", &pk.hd.shouldBlur);
             cvui::text("blur kernel size");
             cvui::trackbar(width, &pk.hd.blurKsize.width, 1, 100);
             cvui::space(5);
@@ -53,19 +52,23 @@ namespace PaperKeyboard {
             cvui::space(5);
 
             cvui::text("Min distance change for click");
-            cvui::trackbar(width, &pk.minDistChange, 0, 100);
+            cvui::trackbar(width, &pk.minDistChange, 0, 200);
             cvui::space(5);
 
             cvui::text("Max distance change for click");
-            cvui::trackbar(width, &pk.maxDistChange, pk.minDistChange + 1, 200);
+            cvui::trackbar(width, &pk.maxDistChange, pk.minDistChange + 1, 350);
             cvui::space(5);
 
             cvui::text("Click delay");
             cvui::trackbar(width, &pk.clickDelay, 0.1f, 5.f);
             cvui::space(5);
 
+            cvui::text("Max angle");
+            cvui::trackbar(width, &pk.hd.maxAngle, 20, 180);
+            cvui::space(5);
+
             cvui::text("Finger");
-            cvui::beginRow(settingsWin, 20, 450, width);
+            cvui::beginRow(settingsWin, 20, 505, width);
             if (cvui::button("Farthest"))
                 pk.clrf = FARTHEST;
             if (cvui::button("Higher"))
@@ -73,13 +76,19 @@ namespace PaperKeyboard {
             if (cvui::button("All"))
                 pk.clrf = ALL;
             cvui::endRow();
-            cvui::space(5);
+            cvui::space(3);
+
+            cvui::checkbox("Blur", &pk.hd.shouldBlur);
+            cvui::space(2);
 
             cvui::checkbox("Check size", &pk.hd.shouldCheckSize);
-            cvui::space(5);
+            cvui::space(2);
 
             cvui::checkbox("Check angles", &pk.hd.shouldCheckAngles);
-            cvui::space(5);
+            cvui::space(2);
+
+            cvui::checkbox("Get last fingers", &pk.hd.shouldGetLast);
+            cvui::space(2);
             cvui::endColumn();
 
             cvui::beginColumn(settingsWin, width + 50, 20, width, -1, 6);
@@ -135,28 +144,31 @@ namespace PaperKeyboard {
             cv::imshow(settingsWName, settingsWin);
         }
 
+        bool shouldShowPrintGUI = true;
         void displayPrintGUI(PaperKeyboard &pk) {
             Mat i(A4_SIZE, CV_8UC1, Scalar(255, 255, 255));
             namedWindow(printKbWName);
             pk.prepare4Print(i);
-            cvui::context(printKbWName);
-            printSettings.begin(i);
-            if (!printSettings.isMinimized()) {
-                cvui::checkbox("Gauge line", &pk.printType.gaugeLine);
-                cvui::space(5);
-                cvui::text("QR position");
-                cvui::space(3);
-                if (cvui::button(90, 25, "Top Left"))
-                    pk.printType.qrCOdePos = TOP_LEFT;
-                cvui::space(2);
-                if (cvui::button(90, 25, "Btm Right"))
-                    pk.printType.qrCOdePos = BTM_RIGHT;
-                cvui::space(2);
-                if (cvui::button(90, 25, "None"))
-                    pk.printType.qrCOdePos = NONE;
+            if (shouldShowPrintGUI) {
+                cvui::context(printKbWName);
+                printSettings.begin(i);
+                if (!printSettings.isMinimized()) {
+                    cvui::checkbox("Gauge line", &pk.printType.gaugeLine);
+                    cvui::space(5);
+                    cvui::text("QR position");
+                    cvui::space(3);
+                    if (cvui::button(90, 25, "Top Left"))
+                        pk.printType.qrCOdePos = TOP_LEFT;
+                    cvui::space(2);
+                    if (cvui::button(90, 25, "Btm Right"))
+                        pk.printType.qrCOdePos = BTM_RIGHT;
+                    cvui::space(2);
+                    if (cvui::button(90, 25, "None"))
+                        pk.printType.qrCOdePos = NONE;
+                }
+                printSettings.end();
+                cvui::update(printKbWName);
             }
-            printSettings.end();
-            cvui::update(printKbWName);
             imshow(printKbWName, i);
         }
 

@@ -21,7 +21,7 @@ endif ()
 
 set(SOURCE_FILES main.cpp)
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wno-sign-compare")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wno-sign-compare -Wno-reorder -Wno-unknown-pragmas")
 
 add_executable(PaperKeyboard main.cpp PaperKeyboard.cpp PaperKeyboard.h Key.cpp Key.h QR.cpp QR.h utils.cpp utils.h cvui.h EnhancedWindow.h GUI.hpp SystemInteraction.hpp)
 

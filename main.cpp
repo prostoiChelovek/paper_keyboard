@@ -18,11 +18,10 @@ using namespace PaperKeyboard;
 void onClick(const Point &p, Key &k) {
     string val = k.getVal(p);
     cout << val << endl;
-    SysInter::writeSerial(val);
     SysInter::sendString(val);
     if (!k.onClickCmd.empty()) {
         system((k.onClickCmd + " &").c_str());
-        cout << k.onClickCmd << endl;
+        cout << "$ " << k.onClickCmd << endl;
     }
 }
 
@@ -49,13 +48,6 @@ int main(int argc, char **argv) {
     if (!cap.isOpened()) {
         cerr << "Unable to open video capture" << endl;
         return EXIT_FAILURE;
-    }
-
-    string portDev = "/dev/ttyUSB0";
-    if (!SysInter::openSerial(portDev)) {
-        cerr << "Unable to open serial port " << portDev << endl;
-    } else {
-        cout << "Serial port " << portDev << " opened successfully" << endl;
     }
 
     SysInter::init();
@@ -197,6 +189,9 @@ int main(int argc, char **argv) {
                     break;
                 case 'v':
                     should_flipVert = !should_flipVert;
+                    break;
+                case 'o':
+                    GUI::shouldShowPrintGUI = !GUI::shouldShowPrintGUI;
                     break;
                 default:
                     cout << "Key pressed: " << key << endl;

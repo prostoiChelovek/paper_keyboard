@@ -27,6 +27,7 @@ namespace PaperKeyboard {
 
     PaperKeyboard::PaperKeyboard() {
         hd = HandDetector();
+        hd.maxAngle = 95;
         bgs = createBackgroundSubtractorMOG2();
         bgs->setShadowValue(0);
         bgs->setShadowThreshold(0.01);
@@ -38,12 +39,14 @@ namespace PaperKeyboard {
 
         cvtColor(img, imgYCrCb, COLOR_BGR2YCrCb);
         mask = hd.detectHands_range(imgYCrCb, YCrCb_lower, YCrCb_upper);
-
         hd.getFingers();
-        hd.getCenters();
+
+        hd.initFilters();
+        hd.updateFilters();
+        hd.stabilize();
+
         hd.getHigherFingers();
         hd.getFarthestFingers();
-
         return mask;
     }
 
@@ -157,9 +160,6 @@ namespace PaperKeyboard {
     }
 
     void PaperKeyboard::getClicks() {
-        if (hd.lastHands.empty())
-            return;
-
         for (Hand &h : hd.hands) {
             ShortHand lastH = h.getSame(hd.lastHands);
 
@@ -175,14 +175,12 @@ namespace PaperKeyboard {
                 ShortFinger lastF = cf.getSame(lastH.fingers);
                 int diffDist = abs(getDist(lastF.ptFar, lastF.ptStart) - getDist(cf.ptFar, cf.ptStart));
                 if (diffDist > minDistChange && diffDist < maxDistChange) {
-                    Key *k = getKeyByPoint(Point(cf.ptStart.x + 10, cf.ptStart.y));
+                    Key *k = getKeyByPoint(Point(cf.ptStart.x, cf.ptStart.y));
                     if (k == nullptr)
-                        return;
-                    if (k->x1.x != -1) {
-                        if (time(nullptr) - lastClickTime >= clickDelay) {
-                            callOnclick(cf.ptStart, *k);
-                            lastClickTime = time(nullptr);
-                        }
+                        continue;
+                    if (time(nullptr) - lastClickTime >= clickDelay) {
+                        callOnclick(cf.ptStart, *k);
+                        lastClickTime = time(nullptr);
                     }
                 }
                 if (clrf != ALL) break;

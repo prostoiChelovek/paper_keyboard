@@ -72,7 +72,7 @@ namespace PaperKeyboard {
         time_t lastClickTime = time(nullptr);
         float clickDelay = 1; // seconds
         int minDistChange = 20;
-        int maxDistChange = 120;
+        int maxDistChange = 60;
 
         Click_rec_finger clrf = ALL;
 
