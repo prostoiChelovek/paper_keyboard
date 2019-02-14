@@ -9,9 +9,6 @@
 
 #if defined(unix) || defined(__unix__) || defined(__unix)
 #define OS_UNIX
-
-#include <SerialStream.h>
-
 #endif
 
 namespace SysInter {
@@ -60,29 +57,6 @@ namespace SysInter {
             string sym(1, str[i]);
             sendLetter(sym.c_str());
         }
-    }
-
-
-    LibSerial::SerialStream serial;
-
-    bool openSerial(string port) {
-        serial.Open(port);
-        serial.SetCharSize(LibSerial::SerialStreamBuf::CHAR_SIZE_8);
-        serial.SetBaudRate(LibSerial::SerialStreamBuf::BaudRateEnum::BAUD_9600);
-        serial.SetNumOfStopBits(1);
-        serial.SetFlowControl(LibSerial::SerialStreamBuf::FLOW_CONTROL_NONE);
-        return serial.good();
-    }
-
-    bool writeSerial(const string &str) {
-        if (serial.good()) {
-            usleep(5000);
-        } else {
-            return false;
-        }
-        serial << str;
-        usleep(100000);
-        return true;
     }
 
 #endif // is unix
