@@ -51,6 +51,10 @@ namespace PaperKeyboard {
             cvui::trackbar(width, &pk.hd.thresh_sens_val, 1, 100);
             cvui::space(5);
 
+            cvui::text("Max angle");
+            cvui::trackbar(width, &pk.hd.maxAngle, 20, 180);
+            cvui::space(5);
+
             cvui::text("Min distance change for click");
             cvui::trackbar(width, &pk.minDistChange, 0, 200);
             cvui::space(5);
@@ -61,10 +65,6 @@ namespace PaperKeyboard {
 
             cvui::text("Click delay");
             cvui::trackbar(width, &pk.clickDelay, 0.1f, 5.f);
-            cvui::space(5);
-
-            cvui::text("Max angle");
-            cvui::trackbar(width, &pk.hd.maxAngle, 20, 180);
             cvui::space(5);
 
             cvui::text("Finger");

@@ -15,6 +15,12 @@ using namespace std;
 using namespace cv;
 using namespace PaperKeyboard;
 
+bool should_adjustManually = false;
+bool should_adjustScale = false;
+bool should_showPrint = false;
+bool should_flipHor = true;
+bool should_flipVert = true;
+
 void onClick(const Point &p, Key &k) {
     string val = k.getVal(p);
     cout << val << endl;
@@ -24,12 +30,6 @@ void onClick(const Point &p, Key &k) {
         cout << "$ " << k.onClickCmd << endl;
     }
 }
-
-bool should_adjustManually = false;
-bool should_adjustScale = false;
-bool should_showPrint = false;
-bool should_flipHor = true;
-bool should_flipVert = true;
 
 
 void flipImg(Mat &img) {
@@ -54,24 +54,11 @@ int main(int argc, char **argv) {
 
     PaperKeyboard::PaperKeyboard pk;
 
-    /*pk.keysVec = vector<string>{
-         "q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "\n",
-         "a", "s", "d", "f", "g", "h", "j", "k", "l", "\n",
-         "z", "x", "c", "v", "b", "n", "m", "\n",
-         "_", "<-"};*/
-    /*pk.keysVec = vector<string>{
-         "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "\n",
-         "й", "ц", "у", "к", "е", "н", "г", "ш", "щ", "з", "х", "ъ", "\n",
-         "ф", "ы", "в", "а", "п", "р", "о", "л", "д", "ж", "э", "\n",
-         "я", "ч", "с", "м", "и", "т", "ь", "б", "ю", "\n",
-         "_", "<-"
-    };*/
+
     vector<string> keysVec = vector<string>{
             "a", "b", "c", "d", "e", "f", "R", "G", "B", "\n", "\n",
             "%1%100"};
-
     pk.keysVec = keysVec;
-
     // remove \n
     for (int i = 0; i < keysVec.size(); i++) {
         auto si = keysVec[i].find('\n');

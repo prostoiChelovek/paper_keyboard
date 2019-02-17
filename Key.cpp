@@ -53,16 +53,17 @@ namespace PaperKeyboard {
     }
 
 
-    void Key::draw(Mat &img, Scalar color, Size fontSize) {
+    void Key::draw(Mat &img, Scalar color) {
         line(img, x1, x2, color);
         line(img, y1, y2, color);
         line(img, x1, y1, color);
         line(img, x2, y2, color);
         if (type == BUTTON) {
-            putText(img, val,
-                    Point((x1.x + x2.x) / 2 - fontSize.width * val.size(),
-                          (x1.y + y1.y) / 2 + fontSize.height),
-                    FONT_HERSHEY_COMPLEX, 1, color);
+            int baseline = 0;
+            Size fSize = getTextSize(val, FONT_HERSHEY_COMPLEX, 1, 1, &baseline);
+            Point textPos = Point(((x1.x + x2.x) - fSize.width) / 2,
+                                  ((x1.y + y1.y) + fSize.height) / 2);
+            putText(img, val, textPos, FONT_HERSHEY_COMPLEX, 1, color);
         } else if (type == SLIDEBAR) {
             line(img, Point(x1.x + 5, x1.y + ((y1.y - x1.y) / 2)),
                  Point(x2.x - 5, x2.y + ((y2.y - x2.y) / 2)), color, 2);

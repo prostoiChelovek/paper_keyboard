@@ -37,8 +37,7 @@ namespace PaperKeyboard {
 
         string serealize2str() const;
 
-        void draw(Mat &img, Scalar color = Scalar(255, 0, 0),
-                  Size fontSize = Size(10, 10));
+        void draw(Mat &img, Scalar color = Scalar(255, 0, 0));
 
     private:
         string val;

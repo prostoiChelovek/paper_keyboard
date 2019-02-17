@@ -93,9 +93,11 @@ namespace PaperKeyboard {
                     X2.x += safeStoi(splits[2]);
                 else
                     X2.x += ksize.width;
-            } else
-                X2.x += s.size() > 1 ? fontSize.width * (s.size() + 1) : 0 + ksize.width;
-
+            } else {
+                int baseline = 0;
+                Size fSize = getTextSize(s, FONT_HERSHEY_COMPLEX, 1, 1, &baseline);
+                X2.x += s.size() > 1 ? fSize.width : 0 + ksize.width;
+            }
             res.emplace_back(vector<Point>{X1, X2, Point(X1.x, X1.y + ksize.height),
                                            Point(X2.x, X1.y + ksize.height)});
             i++;
@@ -190,7 +192,7 @@ namespace PaperKeyboard {
 
     void PaperKeyboard::drawKeys(Mat &img, Scalar color) {
         for (Key &k : keys)
-            k.draw(img, color, fontSize);
+            k.draw(img, color);
     }
 
     void PaperKeyboard::draw(Mat &img, Scalar color) {
