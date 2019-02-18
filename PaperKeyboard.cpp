@@ -246,6 +246,11 @@ namespace PaperKeyboard {
                 res += to_string(k.y2.y);
                 currentLine++;
             }
+            if (!k.onClickCmd.empty()) {
+                res += DATA_SEPARATOR;
+                res += CMD_START_SYM;
+                res += " " + k.onClickCmd;
+            }
             if (currentLine == lines.size())
                 break;
             res += DATA_SEPARATOR;

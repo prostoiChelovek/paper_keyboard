@@ -176,6 +176,7 @@ namespace PaperKeyboard {
         bool rAngles = false;
         int keyWidth = 0;
         int keyHeight = 0;
+        string keyCmd;
         void displayAdjustManuallyGUI(PaperKeyboard &pk, vector<string> &keysVec, Mat &img) {
             if (pk.keys.size() < keysVec.size())
                 pk.keys.resize(keysVec.size());
@@ -224,19 +225,19 @@ namespace PaperKeyboard {
             cvui::checkbox("Right angles", &rAngles);
             cvui::space(2);
             if (cvui::button("Add")) {
-                cout << "Text: " << flush;
-                cin >> keyText;
-                cout << endl;
-                cout << "Type(0,1): " << flush;
+                cout << "Text: ";
+                std::getline(std::cin >> std::ws, keyText);
+                cout << "Type(0,1): ";
                 cin >> keyType;
-                cout << endl;
+                cout << "OnCLick cmd(or -): ";
+                std::getline(std::cin >> std::ws, keyCmd);
+                if (keyCmd == "-")
+                    keyCmd.clear();
                 if (rAngles) {
-                    cout << "Width: " << flush;
+                    cout << "Width: ";
                     cin >> keyWidth;
-                    cout << endl;
-                    cout << "Height: " << flush;
+                    cout << "Height: ";
                     cin >> keyHeight;
-                    cout << endl;
                 }
                 if (keyType == SLIDEBAR)
                     keyText = PKB_STR_TYPE_CHANGE + to_string(keyType) + PKB_STR_TYPE_CHANGE + keyText;
@@ -252,12 +253,14 @@ namespace PaperKeyboard {
             if (cvui::button("Edit")) {
                 tmpPoints.clear();
                 if (rAngles) {
-                    cout << "Width: " << flush;
+                    cout << "Width: ";
                     cin >> keyWidth;
-                    cout << endl;
-                    cout << "Height: " << flush;
+                    cout << "Height: ";
                     cin >> keyHeight;
-                    cout << endl;
+                    cout << "OnCLick cmd(or -): ";
+                    std::getline(std::cin >> std::ws, keyCmd);
+                    if (keyCmd == "-")
+                        keyCmd.clear();
                     editing = true;
                     cout << "Select first point of the key" << endl;
                 }
@@ -281,6 +284,7 @@ namespace PaperKeyboard {
                 }
                 pk.keys[currentKey] = Key(tmpPoints[0], tmpPoints[1], tmpPoints[2], tmpPoints[3],
                                           type, type == SLIDEBAR ? "0" : keysVec[currentKey]);
+                pk.keys[pk.keys.size() - 1].onClickCmd = keyCmd;
                 if (find(selectedKeys.begin(), selectedKeys.end(), currentKey) == selectedKeys.end()) {
                     selectedKeys.emplace_back(currentKey);
                 }
