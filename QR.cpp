@@ -68,7 +68,7 @@ void encodeQr(Mat &img, string text) {
                 posx = x * code_size + margin;
                 posy = y * code_size + margin;
                 rectangle(img, Rect(posx, posy, code_size, code_size),
-                          Scalar(0, 0, 0), CV_FILLED);
+                          Scalar(0, 0, 0), LineTypes::FILLED);
             }
             p++;
         }

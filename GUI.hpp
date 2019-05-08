@@ -34,7 +34,7 @@ namespace PaperKeyboard {
         vector<int> selectedKeys;
 
         void init() {
-            namedWindow(settingsWName, CV_WINDOW_AUTOSIZE);
+            namedWindow(settingsWName);
             cvui::init(settingsWName);
         }
 
@@ -300,7 +300,7 @@ namespace PaperKeyboard {
                 pk.keys[currentKey].draw(img, Scalar(0, 255, 255));
             }
             for (const Point &p : tmpPoints) {
-                circle(img, p, 3, Scalar(0, 255, 255), CV_FILLED);
+                circle(img, p, 3, Scalar(0, 255, 255), LineTypes::FILLED);
             }
             imshow(adjKbWName, img);
         }
@@ -309,14 +309,14 @@ namespace PaperKeyboard {
             namedWindow(adjScWName);
             auto mouseCallback = [](int event, int x, int y, int, void *data) {
                 vector<Point> &tmpPoints2 = *(static_cast<vector<Point> *>(data));
-                if (event == CV_EVENT_LBUTTONDOWN) {
+                if (event == MouseEventTypes::EVENT_LBUTTONDOWN) {
                     tmpPoints2.emplace_back(x, y);
                 }
             };
             setMouseCallback(adjScWName, mouseCallback, &tmpPoints2);
 
             for (const Point &p : tmpPoints2) {
-                circle(img, p, 3, Scalar(255, 0, 255), CV_FILLED);
+                circle(img, p, 3, Scalar(255, 0, 255), LineTypes::FILLED);
             }
             imshow(adjScWName, img);
 
